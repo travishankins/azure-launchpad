@@ -122,6 +122,17 @@
   border-radius: 0.2rem;
 }
 
+.wizard .wizard-impact-list {
+  margin: 0.4rem 0 0 1.1rem;
+  padding: 0;
+}
+.wizard .wizard-impact-list li {
+  margin: 0.15rem 0;
+}
+.wizard .wizard-impact-note {
+  margin: 0.5rem 0 0;
+}
+
 /* Yellow warning callout for the "keep this file out of public repos" notice
    on the wizard result page. Inherits .wizard-impact base styles. */
 .wizard .wizard-secret-warning {

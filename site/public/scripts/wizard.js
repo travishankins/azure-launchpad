@@ -6,7 +6,13 @@ const QUESTIONS = [
     id: 'iac_platform',
     label: 'Which Infrastructure-as-Code platform do you want to use?',
     help: 'Both options deploy the same Azure architecture (identical resource groups, networking, security, monitoring) — pick the one your team already knows.',
-    impact: 'Terraform: HashiCorp HCL + Azure provider, state stored in Azure Storage. Bicep: native ARM-based, deployment history stored in Azure. The wizard will tailor the rest of the questions and emit the right files + commands for your choice.',
+    impact: {
+      bullets: [
+        ['Terraform: ', 'HashiCorp HCL + Azure provider, state stored in Azure Storage.'],
+        ['Bicep: ', 'native ARM-based, deployment history stored in Azure.'],
+      ],
+      note: 'The wizard will tailor the rest of the questions and emit the right files + commands for your choice.',
+    },
     type: 'radio',
     options: [
       { value: 'terraform', label: 'Terraform — HCL + AzureRM provider, AVM modules, remote state.' },
@@ -450,10 +456,24 @@ function render(root) {
       root.appendChild(el('p', { class: 'wizard-help' }, q.help));
     }
     if (q.impact) {
-      root.appendChild(el('div', { class: 'wizard-impact' },
+      const impactBox = el('div', { class: 'wizard-impact' },
         el('strong', {}, 'What this changes: '),
-        q.impact,
-      ));
+      );
+      if (typeof q.impact === 'string') {
+        impactBox.appendChild(document.createTextNode(q.impact));
+      } else {
+        if (q.impact.bullets) {
+          const ul = el('ul', { class: 'wizard-impact-list' });
+          q.impact.bullets.forEach(([label, body]) => {
+            ul.appendChild(el('li', {}, el('strong', {}, label), body));
+          });
+          impactBox.appendChild(ul);
+        }
+        if (q.impact.note) {
+          impactBox.appendChild(el('p', { class: 'wizard-impact-note' }, q.impact.note));
+        }
+      }
+      root.appendChild(impactBox);
     }
 
     let input;
