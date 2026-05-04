@@ -85,8 +85,3 @@ GitHub Actions uses OIDC (no secrets). Configure these repository **variables**:
 | `TFSTATE_RG` / `TFSTATE_SA` / `TFSTATE_CONTAINER` | From `bootstrap-state.sh` output        |
 
 `terraform-plan.yml` runs on PR for all four scenarios in parallel. `terraform-apply.yml` is a manual workflow gated by the protected `prod` GitHub environment.
-
-## Inspired by
-
-- [jonathan-vella/azure-smb-rf](https://github.com/jonathan-vella/azure-smb-rf) — original Bicep + Terraform reference
-- Issue [#18](https://github.com/jonathan-vella/azure-smb-rf/issues/18) — Terraform parity scope
