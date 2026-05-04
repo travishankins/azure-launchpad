@@ -432,7 +432,7 @@ function render(root) {
     }
 
     root.appendChild(el('p', { class: 'wizard-intro' },
-      'Answer a few questions about your environment. The wizard recommends a scenario, generates a ready-to-use tfvars file, and gives you the exact CLI commands to deploy it.',
+      'Answer a few questions about your environment. The wizard recommends a scenario, generates a ready-to-use parameter file (Terraform tfvars or Bicep bicepparam), and gives you the exact CLI commands to deploy it.',
     ));
 
     const q = QUESTIONS[state.step];
@@ -448,7 +448,7 @@ function render(root) {
     const total = visibleStepCount(state.answers);
     const visibleIdx = QUESTIONS.slice(0, state.step + 1).filter((qq) => !isStepSkipped(qq.id, state.answers)).length;
     root.appendChild(
-      el('div', { class: 'step-indicator' }, `Step ${visibleIdx} of ${total}`),
+      el('div', { class: 'step-indicator' }, el('strong', {}, `Step ${visibleIdx} of ${total}`)),
     );
     root.appendChild(el('label', { for: q.id }, q.label));
 
