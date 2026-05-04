@@ -5,6 +5,8 @@ targetScope = 'resourceGroup'
 param location string
 param suffix string
 param gatewaySubnetId string
+@description('Availability zones for the VPN gateway PIP. Pass [] in regions without AZ support. The gateway SKU itself remains *AZ regardless (Azure requirement as of May 2026).')
+param availabilityZones array = []
 param tags object
 
 resource vpnPip 'Microsoft.Network/publicIPAddresses@2024-05-01' = {
@@ -14,11 +16,7 @@ resource vpnPip 'Microsoft.Network/publicIPAddresses@2024-05-01' = {
   sku: {
     name: 'Standard'
   }
-  zones: [
-    '1'
-    '2'
-    '3'
-  ]
+  zones: availabilityZones
   properties: {
     publicIPAllocationMethod: 'Static'
   }
@@ -34,8 +32,10 @@ resource vpnGw 'Microsoft.Network/virtualNetworkGateways@2024-05-01' = {
     activeActive: false
     enableBgp: false
     sku: {
-      name: 'VpnGw1AZ'
-      tier: 'VpnGw1AZ'
+      // Azure retired non-AZ VpnGw1-5 SKUs in May 2026 (NonAzSkusNotAllowedForVPNGateway).
+      // Use *AZ SKUs even in regions without availability zones.
+      name: 'VpnGw2AZ'
+      tier: 'VpnGw2AZ'
     }
     vpnGatewayGeneration: 'Generation2'
     ipConfigurations: [

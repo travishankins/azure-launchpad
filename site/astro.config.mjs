@@ -39,8 +39,8 @@ export default defineConfig({
             { label: 'Compare all four', link: '/scenarios/' },
             { label: 'Baseline (~$48)', link: '/scenarios/baseline/' },
             { label: 'Firewall (~$336)', link: '/scenarios/firewall/' },
-            { label: 'VPN (~$187)', link: '/scenarios/vpn/' },
-            { label: 'Full (~$476)', link: '/scenarios/full/' },
+            { label: 'VPN (~$327)', link: '/scenarios/vpn/' },
+            { label: 'Full (~$616)', link: '/scenarios/full/' },
           ],
         },
         {

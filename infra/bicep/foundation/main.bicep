@@ -61,6 +61,41 @@ var useVpn = scenario == 'vpn' || scenario == 'full'
 var useNat = !useFirewall
 var usePeering = useFirewall || useVpn
 
+// Regions without availability zone support. When deploying here, zonal
+// resources (PIPs, NAT GW, Azure Firewall, VPN PIP) must omit `zones`.
+// Note: VPN Gateway SKU still must be *AZ even in non-AZ regions (Azure
+// requirement as of May 2026 — NonAzSkusNotAllowedForVPNGateway).
+var regionsWithoutZones = [
+  'westcentralus'
+  'northcentralus'
+  'westus'
+  'centralindia'
+  'switzerlandwest'
+  'norwaywest'
+  'uaenorth'
+  'francesouth'
+  'germanynorth'
+  'swedensouth'
+  'brazilsoutheast'
+  'jioindiawest'
+  'jioindiacentral'
+  'australiacentral'
+  'australiacentral2'
+  'australiasoutheast'
+  'southindia'
+  'westindia'
+  'japanwest'
+  'koreasouth'
+  'canadaeast'
+  'ukwest'
+]
+var regionSupportsZones = !contains(regionsWithoutZones, location)
+var availabilityZones = regionSupportsZones ? [
+  '1'
+  '2'
+  '3'
+] : []
+
 var suffix = '${namePrefix}-${regionShort}'
 
 var rgNames = {
@@ -144,6 +179,7 @@ module networking 'modules/networking.bicep' = {
     useNat: useNat
     usePeering: usePeering
     useVpn: useVpn
+    availabilityZones: availabilityZones
     tags: mergedTags
   }
   dependsOn: [
@@ -166,6 +202,7 @@ module firewall 'modules/firewall.bicep' = if (useFirewall) {
     afwMgmtSubnetCidr: hubSubnetAfwMgmt
     spokeRgName: rgNames.spoke
     spokeWorkloadSubnetId: networking.outputs.spokeWorkloadSubnetId
+    availabilityZones: availabilityZones
     tags: mergedTags
   }
 }
@@ -181,6 +218,7 @@ module vpn 'modules/vpn.bicep' = if (useVpn) {
     location: location
     suffix: suffix
     gatewaySubnetId: networking.outputs.gatewaySubnetId
+    availabilityZones: availabilityZones
     tags: mergedTags
   }
 }

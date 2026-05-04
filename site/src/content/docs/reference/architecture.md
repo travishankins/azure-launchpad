@@ -55,7 +55,7 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph Hub[Hub VNet]
-      VPN[VPN Gateway VpnGw1AZ]
+      VPN[VPN Gateway VpnGw2AZ]
     end
     subgraph Spoke[Spoke VNet]
       S_workload[snet-workload]
@@ -73,7 +73,7 @@ flowchart LR
 flowchart LR
     subgraph Hub[Hub VNet]
       AF[Azure Firewall Basic]
-      VPN[VPN Gateway VpnGw1AZ]
+      VPN[VPN Gateway VpnGw2AZ]
     end
     subgraph Spoke[Spoke VNet]
       S_workload[snet-workload]

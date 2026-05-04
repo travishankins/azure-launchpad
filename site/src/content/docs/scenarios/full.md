@@ -1,9 +1,13 @@
 ---
 title: Full scenario
-description: ~$476/month — Firewall + VPN combined. Highest control.
+description: ~$616/month — Firewall + VPN combined. Highest control.
 ---
 
-**Approx. cost:** ~$476 / month (Firewall Basic + `VpnGw1AZ`).
+**Approx. cost:** ~$616 / month (Firewall Basic + `VpnGw2AZ`).
+
+:::note[Why `VpnGw2AZ`?]
+Microsoft retired the non-AZ `VpnGw1`–`VpnGw5` SKUs in May 2026 (`NonAzSkusNotAllowedForVPNGateway`). `VpnGw1AZ` is no longer accepted by the `azurerm` provider's validation, so the foundation pins **`VpnGw2AZ`** (Generation 2). Both Terraform and Bicep apply this even in regions without availability zones.
+:::
 
 ## What you get
 

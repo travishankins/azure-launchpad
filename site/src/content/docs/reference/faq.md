@@ -63,6 +63,30 @@ Today the foundation deploys to a single region. For a multi-region pattern, dep
 
 ---
 
+## Regional gotchas
+
+### My region doesn't support availability zones — will the deploy fail?
+
+No, but it used to. The foundation now detects non-AZ regions (e.g. `westcentralus`, `northcentralus`, `centralindia`, `switzerlandwest`, `australiacentral`, `canadaeast`, `ukwest`, `japanwest`, etc.) and **omits the `zones` property** on Public IPs, NAT Gateway, Azure Firewall, and the VPN Gateway PIP automatically.
+
+- **Terraform**: see `local.region_supports_zones` and `local.availability_zones` in [`infra/terraform/foundation/locals.tf`](https://github.com/travishankins/smb-foundations/blob/main/infra/terraform/foundation/locals.tf).
+- **Bicep**: same list lives in [`infra/bicep/foundation/main.bicep`](https://github.com/travishankins/smb-foundations/blob/main/infra/bicep/foundation/main.bicep) as `availabilityZones` and is passed into the networking, firewall, and vpn modules.
+
+If you deploy to a new region not on the list and hit `LocationNotSupportAvailabilityZones`, add the region name to that list and re-apply.
+
+### Why is the VPN Gateway pinned to `VpnGw2AZ`?
+
+In **May 2026** Microsoft retired the non-AZ `VpnGw1`–`VpnGw5` SKUs (`NonAzSkusNotAllowedForVPNGateway`). The `azurerm` provider's validation also dropped `VpnGw1AZ`, leaving `VpnGw2AZ`–`VpnGw5AZ` as the only valid choices. The foundation pins `VpnGw2AZ` (Generation 2) because it's the cheapest still-supported tier:
+
+- **Even in regions without AZs**, Azure now requires an `AZ` SKU. The gateway is created without zones in non-AZ regions but the SKU name still ends in `AZ`.
+- To upgrade to `VpnGw3AZ`/`VpnGw4AZ`/`VpnGw5AZ` (more bandwidth, more S2S tunnels), edit `modules.vpn.tf` (Terraform) or `modules/vpn.bicep` (Bicep).
+
+### What about the Firewall — does it need an AZ SKU too?
+
+No. Azure Firewall takes a `zones` array directly. In non-AZ regions the foundation passes `[]` and the firewall deploys non-zonal. Same applies to the firewall's three Public IPs.
+
+---
+
 ## State, deployments, and history
 
 ### Where is Terraform state stored?

@@ -7,7 +7,7 @@ Every scenario shares the same hub-spoke topology. You only add what the custome
 
 |                                | Baseline | Firewall | VPN   | Full  |
 | ------------------------------ | -------- | -------- | ----- | ----- |
-| **Approx. cost / month**       | ~$48     | ~$336    | ~$187 | ~$476 |
+| **Approx. cost / month**       | ~$48     | ~$336    | ~$327 | ~$616 |
 | Hub + spoke VNets              | ✅       | ✅       | ✅    | ✅    |
 | Key Vault + Private Endpoint   | ✅       | ✅       | ✅    | ✅    |
 | Log Analytics + Recovery Vault | ✅       | ✅       | ✅    | ✅    |
@@ -15,7 +15,7 @@ Every scenario shares the same hub-spoke topology. You only add what the custome
 | Hub ↔ Spoke peering            | —        | ✅       | ✅    | ✅    |
 | Azure Firewall (Basic)         | —        | ✅       | —     | ✅    |
 | Spoke UDR → Firewall           | —        | ✅       | —     | ✅    |
-| VPN Gateway (`VpnGw1AZ`)       | —        | —        | ✅    | ✅    |
+| VPN Gateway (`VpnGw2AZ`)       | —        | —        | ✅    | ✅    |
 
 ## Decision shortcuts
 

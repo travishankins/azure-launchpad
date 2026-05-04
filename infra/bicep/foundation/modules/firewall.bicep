@@ -10,6 +10,8 @@ param afwSubnetId string
 param afwMgmtSubnetCidr string
 param spokeRgName string
 param spokeWorkloadSubnetId string
+@description('Availability zones for the firewall and its PIPs. Pass [] in regions without AZ support.')
+param availabilityZones array = []
 param tags object
 
 resource hubVnet 'Microsoft.Network/virtualNetworks@2024-05-01' existing = {
@@ -32,11 +34,7 @@ resource fwPip1 'Microsoft.Network/publicIPAddresses@2024-05-01' = {
   sku: {
     name: 'Standard'
   }
-  zones: [
-    '1'
-    '2'
-    '3'
-  ]
+  zones: availabilityZones
   properties: {
     publicIPAllocationMethod: 'Static'
   }
@@ -49,11 +47,7 @@ resource fwPip2 'Microsoft.Network/publicIPAddresses@2024-05-01' = {
   sku: {
     name: 'Standard'
   }
-  zones: [
-    '1'
-    '2'
-    '3'
-  ]
+  zones: availabilityZones
   properties: {
     publicIPAllocationMethod: 'Static'
   }
@@ -66,11 +60,7 @@ resource fwMgmtPip 'Microsoft.Network/publicIPAddresses@2024-05-01' = {
   sku: {
     name: 'Standard'
   }
-  zones: [
-    '1'
-    '2'
-    '3'
-  ]
+  zones: availabilityZones
   properties: {
     publicIPAllocationMethod: 'Static'
   }
@@ -91,11 +81,7 @@ resource firewall 'Microsoft.Network/azureFirewalls@2024-05-01' = {
   name: 'afw-${suffix}'
   location: location
   tags: tags
-  zones: [
-    '1'
-    '2'
-    '3'
-  ]
+  zones: availabilityZones
   properties: {
     sku: {
       name: 'AZFW_VNet'

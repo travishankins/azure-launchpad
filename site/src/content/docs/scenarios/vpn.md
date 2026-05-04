@@ -1,16 +1,20 @@
 ---
 title: VPN scenario
-description: ~$187/month — adds a zone-redundant VPN Gateway for site-to-site connectivity.
+description: ~$327/month — adds a VPN Gateway (VpnGw2AZ) for site-to-site connectivity.
 ---
 
-**Approx. cost:** ~$187 / month (`VpnGw1AZ`).
+**Approx. cost:** ~$327 / month (`VpnGw2AZ`).
+
+:::note[Why `VpnGw2AZ`?]
+Microsoft retired the non-AZ `VpnGw1`–`VpnGw5` SKUs in May 2026 (`NonAzSkusNotAllowedForVPNGateway`). The `azurerm` provider's validation also dropped `VpnGw1AZ`, so the foundation pins **`VpnGw2AZ`** (Generation 2) for both Terraform and Bicep — even in regions without availability zones.
+:::
 
 ## What you get
 
 Everything in [baseline](/smb-foundations/scenarios/baseline/) **plus**:
 
 - VPN public IP (Standard, zonal)
-- `azurerm_virtual_network_gateway` (`Vpn` / `RouteBased` / `VpnGw1AZ` / Generation 2)
+- `azurerm_virtual_network_gateway` (`Vpn` / `RouteBased` / `VpnGw2AZ` / Generation 2)
 - Hub ↔ Spoke VNet peering with **gateway transit** enabled (spoke uses the hub's gateway)
 
 NAT Gateway on the spoke is kept for outbound internet (only the firewall scenarios disable it).

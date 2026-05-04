@@ -14,6 +14,8 @@ param spokeRgName string
 param useNat bool
 param usePeering bool
 param useVpn bool
+@description('Availability zones for zonal resources (e.g. NAT PIP). Pass [] in regions without AZ support.')
+param availabilityZones array = []
 param tags object
 
 // --- Hub VNet ---------------------------------------------------------------
@@ -60,11 +62,7 @@ resource natPip 'Microsoft.Network/publicIPAddresses@2024-05-01' = if (useNat) {
   sku: {
     name: 'Standard'
   }
-  zones: [
-    '1'
-    '2'
-    '3'
-  ]
+  zones: availabilityZones
   properties: {
     publicIPAllocationMethod: 'Static'
   }

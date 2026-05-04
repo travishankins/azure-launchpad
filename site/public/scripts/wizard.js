@@ -33,7 +33,7 @@ const QUESTIONS = [
   {
     id: 'hybrid',
     label: 'Do you need site-to-site connectivity to an on-premises network?',
-    help: 'Adds a zone-redundant VPN Gateway (VpnGw1AZ, Generation2) in the hub GatewaySubnet and creates hub↔spoke peerings.',
+    help: 'Adds a VPN Gateway (VpnGw2AZ, Generation2) in the hub GatewaySubnet and creates hub↔spoke peerings. AZ SKU is required by Azure as of May 2026 even in non-AZ regions.',
     impact: 'Adds ~$140/mo. Requires at least one on-premises CIDR (next step) for routing and validation.',
     type: 'radio',
     options: [
@@ -167,8 +167,8 @@ function deriveScenario(answers) {
 const SCENARIO_META = {
   baseline: { price: '~$48 / month', summary: 'Hub-spoke + NAT egress + shared services. Lowest cost.' },
   firewall: { price: '~$336 / month', summary: 'Adds Azure Firewall (Basic) for managed egress filtering.' },
-  vpn:      { price: '~$187 / month', summary: 'Adds a zone-redundant VPN Gateway for site-to-site connectivity.' },
-  full:     { price: '~$476 / month', summary: 'Firewall + VPN. Highest control.' },
+  vpn:      { price: '~$327 / month', summary: 'Adds a VPN Gateway (VpnGw2AZ) for site-to-site connectivity.' },
+  full:     { price: '~$616 / month', summary: 'Firewall + VPN (VpnGw2AZ). Highest control.' },
 };
 
 function buildTfvars(answers) {
