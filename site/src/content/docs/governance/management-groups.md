@@ -61,7 +61,7 @@ Valid MG keys: `root`, `platform`, `management`, `connectivity`, `identity`, `se
 
 ## Policies
 
-Policy assignments are **opt-in** and **fully customer-driven** — see the [Policy catalog](/governance/policy-catalog/) for the recommended list of ALZ-aligned built-in initiatives you can assign.
+Policy assignments are **opt-in** and **fully customer-driven** — see the [Policy catalog](/smb-foundations/governance/policy-catalog/) for the recommended list of ALZ-aligned built-in initiatives you can assign.
 
 ## Deploy
 

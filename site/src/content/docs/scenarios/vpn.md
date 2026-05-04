@@ -7,7 +7,7 @@ description: ~$187/month — adds a zone-redundant VPN Gateway for site-to-site 
 
 ## What you get
 
-Everything in [baseline](/scenarios/baseline/) **plus**:
+Everything in [baseline](/smb-foundations/scenarios/baseline/) **plus**:
 
 - VPN public IP (Standard, zonal)
 - `azurerm_virtual_network_gateway` (`Vpn` / `RouteBased` / `VpnGw1AZ` / Generation 2)

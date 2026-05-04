@@ -689,9 +689,9 @@ function render(root) {
     root.appendChild(el('h3', {}, 'Next steps'));
     const ul = el('ul');
     [
-      ['Read the full prerequisites checklist', '/getting-started/prerequisites/'],
-      [`Architecture diagram for ${scenario}`, `/scenarios/${scenario}/`],
-      ['Day-2 operations runbook', '/reference/operations/'],
+      ['Read the full prerequisites checklist', '/smb-foundations/getting-started/prerequisites/'],
+      [`Architecture diagram for ${scenario}`, `/smb-foundations/scenarios/${scenario}/`],
+      ['Day-2 operations runbook', '/smb-foundations/reference/operations/'],
     ].forEach(([t, href]) => ul.appendChild(el('li', {}, el('a', { href }, t))));
     root.appendChild(ul);
 

@@ -19,7 +19,7 @@ SMB cost-tier alignment with the upstream `azure-smb-rf` reference. Standard add
 
 Per the architectural decision in the upstream issue, the **`foundation`** module is subscription-scoped only. MG / policy / Defender plans live one layer above the landing zone and would prevent the module from running in customer subscriptions where you only have Contributor.
 
-If you do want them, this repo also ships an **opt-in, separate** root module: [`management-groups`](/governance/management-groups/). It deploys an ALZ-aligned hierarchy (including the new `Local` MG from ALZ 2026.04) and lets you pick exactly which built-in policy initiatives to assign and at which scope — see the [policy catalog](/governance/policy-catalog/). It's a separate module because it needs tenant-root permissions and a separate state file.
+If you do want them, this repo also ships an **opt-in, separate** root module: [`management-groups`](/smb-foundations/governance/management-groups/). It deploys an ALZ-aligned hierarchy (including the new `Local` MG from ALZ 2026.04) and lets you pick exactly which built-in policy initiatives to assign and at which scope — see the [policy catalog](/smb-foundations/governance/policy-catalog/). It's a separate module because it needs tenant-root permissions and a separate state file.
 
 ### Can I extend this for additional spokes?
 
@@ -27,7 +27,7 @@ Yes — the easiest path is to add another VNet module call + peering in `module
 
 ### Does `terraform destroy` clean everything up?
 
-Almost. Soft-deleted Key Vaults remain for 7 days (and block name reuse). See [Operations](/reference/operations/) for `az keyvault purge`. The state RG (`rg-tfstate-*`) is intentionally **not** Terraform-managed — delete manually after customer offboarding.
+Almost. Soft-deleted Key Vaults remain for 7 days (and block name reuse). See [Operations](/smb-foundations/reference/operations/) for `az keyvault purge`. The state RG (`rg-tfstate-*`) is intentionally **not** Terraform-managed — delete manually after customer offboarding.
 
 ### How do I update AVM module versions?
 
