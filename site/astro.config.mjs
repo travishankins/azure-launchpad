@@ -61,6 +61,10 @@ export default defineConfig({
         },
       ],
       customCss: ['./src/styles/custom.css'],
+      components: {
+        // Hide the "On this page" table of contents site-wide.
+        PageSidebar: './src/components/EmptyPageSidebar.astro',
+      },
       head: [
         // Don't leak page URLs (which never contain secrets, but may carry
         // wizard state in future) via the Referer header on outbound clicks.
