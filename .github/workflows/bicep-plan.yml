@@ -1,0 +1,56 @@
+name: bicep-plan
+
+on:
+  pull_request:
+    paths:
+      - "infra/bicep/**"
+      - ".github/workflows/bicep-*.yml"
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  WORKING_DIR: infra/bicep/foundation
+
+jobs:
+  build-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bicep build (lint)
+        run: |
+          for f in ${{ env.WORKING_DIR }}/main.bicep ${{ env.WORKING_DIR }}/modules/*.bicep; do
+            echo "=== $f ==="
+            az bicep build --file "$f" --stdout > /dev/null
+          done
+      - name: Bicep build-params (all scenarios)
+        run: |
+          for s in baseline firewall vpn full; do
+            echo "=== $s ==="
+            az bicep build-params --file ${{ env.WORKING_DIR }}/scenarios/$s.bicepparam --stdout > /dev/null
+          done
+
+  what-if:
+    needs: build-validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [ baseline, firewall, vpn, full ]
+    environment: plan
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: az deployment sub what-if
+        run: |
+          az deployment sub what-if \
+            --location ${{ vars.AZURE_DEFAULT_LOCATION || 'westcentralus' }} \
+            --name foundation-${{ matrix.scenario }}-${{ github.run_number }} \
+            --parameters ${{ env.WORKING_DIR }}/scenarios/${{ matrix.scenario }}.bicepparam

@@ -1,0 +1,97 @@
+---
+title: SMB Foundations — Azure Landing Zones
+description: Opinionated Azure platform foundations for small and mid-size customers — secure defaults, predictable cost, deployed from one Terraform root.
+template: splash
+hero:
+  tagline: Skip the blank-canvas problem. Pick a cost tier, answer a few questions, and ship an Azure foundation your team can actually operate — networking, governance, identity hooks, and observability wired together from day one.
+  actions:
+    - text: Open the deployment wizard
+      link: /wizard/
+      icon: right-arrow
+      variant: primary
+    - text: Compare scenarios
+      link: /scenarios/
+      icon: external
+    - text: View on GitHub
+      link: https://github.com/travishankins/smb-foundations
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## Pick your path
+
+<CardGrid>
+  <Card title="New here?" icon="open-book">
+    Learn what this repo solves and how the hub-spoke pattern is wired together.
+    [Read the architecture →](/reference/architecture/)
+  </Card>
+  <Card title="Ready to deploy" icon="rocket">
+    Answer a few questions and walk away with a ready-to-use parameter file
+    (Terraform `.tfvars` or Bicep `.bicepparam`) and the exact CLI commands to
+    run. [Open the wizard →](/wizard/)
+  </Card>
+</CardGrid>
+
+<div class="center-card">
+  <CardGrid>
+    <Card title="Already deployed" icon="setting">
+      Day-2 ops: monitoring, backup verification, cost tracking, teardown.
+      [Operations runbook →](/reference/operations/)
+    </Card>
+  </CardGrid>
+</div>
+
+## Four sizes, one architecture
+
+<div class="scenario-grid">
+  <div class="scenario-card">
+    <h3>Baseline</h3>
+    <div class="price">~$48 / month</div>
+    <p>
+      Hub-spoke VNets, NAT gateway, Private DNS, Key Vault with PE, Log
+      Analytics, Recovery Services.
+    </p>
+    <p>
+      <a href="/scenarios/baseline/">Details →</a>
+    </p>
+  </div>
+  <div class="scenario-card">
+    <h3>Firewall</h3>
+    <div class="price">~$336 / month</div>
+    <p>
+      Adds Azure Firewall (Basic) for managed egress filtering. Replaces NAT,
+      forces 0.0.0.0/0 through the firewall.
+    </p>
+    <p>
+      <a href="/scenarios/firewall/">Details →</a>
+    </p>
+  </div>
+  <div class="scenario-card">
+    <h3>VPN</h3>
+    <div class="price">~$187 / month</div>
+    <p>
+      Adds a zone-redundant VPN Gateway for hybrid connectivity to the
+      customer's on-premises network.
+    </p>
+    <p>
+      <a href="/scenarios/vpn/">Details →</a>
+    </p>
+  </div>
+  <div class="scenario-card">
+    <h3>Full</h3>
+    <div class="price">~$476 / month</div>
+    <p>
+      Firewall + VPN combined. Highest-control deployment for regulated
+      workloads.
+    </p>
+    <p>
+      <a href="/scenarios/full/">Details →</a>
+    </p>
+  </div>
+</div>
+
+## Built on Azure Verified Modules
+
+Every resource is provisioned through Azure Verified Modules — [AVM-TF](https://azure.github.io/Azure-Verified-Modules/indexes/terraform/) on the Terraform side and [AVM-Bicep](https://azure.github.io/Azure-Verified-Modules/indexes/bicep/) on the Bicep side. Modules are pinned to specific versions and updated by Dependabot. Terraform state lives in an Azure Storage backend with Entra ID auth (no SAS keys, no shared secrets); Bicep deployments are tracked natively in Azure Resource Manager — pick the workflow your team prefers.

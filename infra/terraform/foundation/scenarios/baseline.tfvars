@@ -1,0 +1,2 @@
+scenario = "baseline"
+location = "westcentralus"

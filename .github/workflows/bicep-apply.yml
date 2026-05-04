@@ -1,0 +1,43 @@
+name: bicep-apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Scenario to deploy"
+        required: true
+        type: choice
+        options: [ baseline, firewall, vpn, full ]
+  push:
+    branches: [ main ]
+    paths:
+      - "infra/bicep/foundation/**"
+      - ".github/workflows/bicep-apply.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  WORKING_DIR: infra/bicep/foundation
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: apply
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: az deployment sub create
+        env:
+          SCENARIO: ${{ github.event.inputs.scenario || 'baseline' }}
+        run: |
+          az deployment sub create \
+            --location ${{ vars.AZURE_DEFAULT_LOCATION || 'westcentralus' }} \
+            --name foundation-${SCENARIO}-${{ github.run_number }} \
+            --parameters ${{ env.WORKING_DIR }}/scenarios/${SCENARIO}.bicepparam

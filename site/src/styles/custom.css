@@ -1,0 +1,264 @@
+/* SMB Foundations — Azure Landing Zones — site customizations */
+
+:root {
+  --sl-color-accent-low: #0b3d91;
+  --sl-color-accent: #1e6dff;
+  --sl-color-accent-high: #4d96ff;
+}
+
+/* Center a single Card under a 2-column CardGrid above it.
+   Starlight's CardGrid uses grid-template-columns: 1fr 1fr with gap: 1.5rem
+   on viewports >=50rem, so we size the wrapper to one column width and force
+   the inner grid to single-column so the card fills it. */
+.center-card {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+.center-card > .card-grid {
+  width: calc(50% - 0.75rem);
+  grid-template-columns: 1fr !important;
+}
+@media (max-width: 50rem) {
+  .center-card > .card-grid {
+    width: 100%;
+  }
+}
+
+.scenario-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-auto-rows: 1fr;
+  align-items: stretch;
+  margin: 1.5rem 0;
+}
+
+/* Reset Starlight prose margins — grid items must start aligned. */
+.scenario-grid > * {
+  margin-top: 0 !important;
+}
+
+.scenario-card {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--sl-color-gray-7, #fafafa);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.scenario-card > * {
+  margin-top: 0;
+}
+
+.scenario-card > * + * {
+  margin-top: 0.5rem;
+}
+
+.scenario-card h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.scenario-card .price {
+  font-weight: 600;
+  color: var(--sl-color-accent);
+}
+
+.scenario-card > p {
+  flex: 1 1 auto;
+}
+
+.scenario-card > p:last-child {
+  flex: 0 0 auto;
+  margin-top: auto;
+}
+
+.wizard {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  background: var(--sl-color-gray-7, #fafafa);
+}
+
+.wizard label {
+  display: block;
+  margin-top: 1rem;
+  font-weight: 600;
+}
+
+.wizard .wizard-intro {
+  margin: 0 0 1rem;
+  color: var(--sl-color-text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.wizard .wizard-help {
+  margin: 0.4rem 0 0;
+  color: var(--sl-color-gray-2);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.wizard .wizard-impact {
+  margin: 0.6rem 0 0;
+  padding: 0.6rem 0.8rem;
+  background: var(--sl-color-gray-6, rgba(0, 0, 0, 0.04));
+  border-left: 3px solid var(--sl-color-accent);
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--sl-color-text);
+}
+
+.wizard .wizard-impact code {
+  font-size: 0.85em;
+  padding: 0.05em 0.3em;
+  background: var(--sl-color-bg);
+  border-radius: 0.2rem;
+}
+
+/* Yellow warning callout for the "keep this file out of public repos" notice
+   on the wizard result page. Inherits .wizard-impact base styles. */
+.wizard .wizard-secret-warning {
+  border-left-color: #d4a017;
+  background: rgba(212, 160, 23, 0.08);
+}
+
+/* Privacy notice shown above the wizard on the wizard page. */
+.wizard-privacy {
+  margin: 1rem 0 1.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--sl-color-gray-6, rgba(0, 0, 0, 0.04));
+  border-left: 3px solid var(--sl-color-accent);
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--sl-color-text);
+}
+
+.wizard .wizard-steps {
+  margin: 0.75rem 0 1rem 1.25rem;
+  padding: 0;
+}
+
+.wizard .wizard-steps li {
+  margin: 0.25rem 0;
+  line-height: 1.5;
+}
+
+.wizard input[type="text"],
+.wizard select {
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--sl-color-gray-4);
+  border-radius: 0.35rem;
+  background: var(--sl-color-bg);
+  color: var(--sl-color-text);
+  font: inherit;
+}
+
+.wizard .options {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1fr;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .wizard .options {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.wizard .opt {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--sl-color-gray-4);
+  border-radius: 0.4rem;
+  cursor: pointer;
+  background: var(--sl-color-bg);
+}
+
+.wizard .opt input { margin-top: 0.2rem; }
+
+.wizard .actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  align-items: center;
+}
+
+.wizard .actions button,
+.wizard .actions button.secondary {
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1;
+  margin: 0;
+  padding: 0 1rem;
+  height: 2.5rem;
+  min-height: 2.5rem;
+  border-radius: 0.4rem;
+  border-width: 1px;
+  border-style: solid;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.wizard .actions button {
+  border-color: var(--sl-color-accent);
+  background: var(--sl-color-accent);
+  color: white;
+}
+
+.wizard .actions button.secondary {
+  background: transparent;
+  color: var(--sl-color-text);
+  border-color: var(--sl-color-gray-4);
+}
+
+.wizard .actions button.secondary:hover {
+  background: var(--sl-color-gray-6, rgba(0, 0, 0, 0.04));
+}
+
+.wizard .step-indicator {
+  font-size: 0.85rem;
+  color: var(--sl-color-gray-3);
+  margin-bottom: 0.25rem;
+}
+
+.wizard .verdict {
+  border-left: 4px solid var(--sl-color-accent);
+  padding: 0.75rem 1rem;
+  background: var(--sl-color-bg);
+  border-radius: 0.25rem;
+  margin: 1rem 0;
+}
+
+.wizard pre {
+  position: relative;
+}
+
+.wizard .copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.6rem;
+}
+
+.hidden { display: none !important; }

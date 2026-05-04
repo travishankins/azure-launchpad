@@ -1,0 +1,65 @@
+name: terraform-mg-apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Scenario tfvars to apply"
+        required: true
+        default: "minimal"
+        type: choice
+        options: [ minimal, full ]
+  push:
+    branches: [ main ]
+    paths:
+      - "infra/terraform/management-groups/**"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: "1.9.8"
+  TF_IN_AUTOMATION: "1"
+  ARM_USE_AZUREAD: "true"
+  ARM_USE_OIDC: "true"
+  WORKING_DIR: infra/terraform/management-groups
+  SCENARIO: ${{ github.event.inputs.scenario || 'minimal' }}
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: apply-mg # protect with required reviewers in repo settings
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_MG_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          allow-no-subscriptions: true
+      - name: terraform init
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_MG_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          terraform -chdir=${{ env.WORKING_DIR }} init \
+            -backend-config="resource_group_name=${{ vars.TFSTATE_RG }}" \
+            -backend-config="storage_account_name=${{ vars.TFSTATE_SA }}" \
+            -backend-config="container_name=${{ vars.TFSTATE_CONTAINER }}" \
+            -backend-config="key=management-groups.${{ env.SCENARIO }}.tfstate"
+      - name: terraform apply
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_MG_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+        run: |
+          terraform -chdir=${{ env.WORKING_DIR }} apply -auto-approve \
+            -var-file=scenarios/${{ env.SCENARIO }}.tfvars

@@ -1,0 +1,19 @@
+---
+title: Deployment wizard
+description: Answer a few questions and get a tailored tfvars file plus the exact commands to deploy your SMB Foundations landing zone.
+---
+
+<noscript>
+  <strong>This wizard needs JavaScript.</strong> If you can't enable JS, head to <a href="/scenarios/">Compare scenarios</a> and copy a tfvars from <code>scenarios/</code> in the repo.
+</noscript>
+
+<aside class="wizard-privacy" role="note" aria-label="Privacy notice">
+  <strong>Privacy:</strong> this wizard runs entirely in your browser. Nothing
+  you enter (subscription ID, tenant ID, CIDRs, name prefix) is sent to a
+  server, logged, or stored anywhere — close the tab and it's gone. The site
+  ships no analytics, telemetry, or third-party scripts.
+</aside>
+
+<div id="wizard-root" class="wizard"></div>
+
+<script type="module" src={`${import.meta.env.BASE_URL}scripts/wizard.js`}></script>

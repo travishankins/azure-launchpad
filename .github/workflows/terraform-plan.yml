@@ -1,0 +1,93 @@
+name: terraform-plan
+
+on:
+  pull_request:
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/terraform-*.yml"
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  TF_VERSION: "1.9.8"
+  TF_IN_AUTOMATION: "1"
+  ARM_USE_AZUREAD: "true"
+  ARM_USE_OIDC: "true"
+  WORKING_DIR: infra/terraform/foundation
+
+jobs:
+  fmt-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: terraform fmt
+        run: terraform -chdir=infra/terraform/foundation fmt -check -recursive
+      - name: terraform init (no backend)
+        run: terraform -chdir=${{ env.WORKING_DIR }} init -backend=false
+      - name: terraform validate
+        run: terraform -chdir=${{ env.WORKING_DIR }} validate
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: fmt-validate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: infra/terraform/foundation
+          soft_fail: false
+
+  plan:
+    needs: fmt-validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [ baseline, firewall, vpn, full ]
+    environment: plan
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: terraform init
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          terraform -chdir=${{ env.WORKING_DIR }} init \
+            -backend-config="resource_group_name=${{ vars.TFSTATE_RG }}" \
+            -backend-config="storage_account_name=${{ vars.TFSTATE_SA }}" \
+            -backend-config="container_name=${{ vars.TFSTATE_CONTAINER }}" \
+            -backend-config="key=foundation.${{ matrix.scenario }}.tfstate"
+      - name: terraform workspace
+        run: terraform -chdir=${{ env.WORKING_DIR }} workspace select -or-create ${{
+          matrix.scenario }}
+      - name: terraform plan
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          terraform -chdir=${{ env.WORKING_DIR }} plan \
+            -var-file=scenarios/${{ matrix.scenario }}.tfvars \
+            -out=tfplan.${{ matrix.scenario }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ matrix.scenario }}
+          path: ${{ env.WORKING_DIR }}/tfplan.${{ matrix.scenario }}
+          retention-days: 7

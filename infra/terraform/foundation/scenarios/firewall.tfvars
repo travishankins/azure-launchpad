@@ -1,0 +1,2 @@
+scenario = "firewall"
+location = "westcentralus"

@@ -1,0 +1,38 @@
+name: bicep-mg-apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "MG scenario to deploy"
+        required: true
+        type: choice
+        options: [ minimal, full ]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  WORKING_DIR: infra/bicep/management-groups
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: apply-mg
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure login (OIDC, no subscription)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_MG_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+      - name: az deployment tenant create
+        env:
+          SCENARIO: ${{ github.event.inputs.scenario }}
+        run: |
+          az deployment tenant create \
+            --location ${{ vars.AZURE_DEFAULT_LOCATION || 'westcentralus' }} \
+            --name foundations-mg-${SCENARIO}-${{ github.run_number }} \
+            --parameters ${{ env.WORKING_DIR }}/scenarios/${SCENARIO}.bicepparam

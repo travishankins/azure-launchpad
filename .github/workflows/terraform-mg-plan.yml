@@ -1,0 +1,92 @@
+name: terraform-mg-plan
+
+on:
+  pull_request:
+    paths:
+      - "infra/terraform/management-groups/**"
+      - ".github/workflows/terraform-mg-*.yml"
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Scenario tfvars to plan against"
+        required: true
+        default: "minimal"
+        type: choice
+        options: [ minimal, full ]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  TF_VERSION: "1.9.8"
+  TF_IN_AUTOMATION: "1"
+  ARM_USE_AZUREAD: "true"
+  ARM_USE_OIDC: "true"
+  WORKING_DIR: infra/terraform/management-groups
+
+jobs:
+  fmt-validate-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: terraform fmt
+        run: terraform -chdir=${{ env.WORKING_DIR }} fmt -check -recursive
+      - name: terraform init (no backend)
+        run: terraform -chdir=${{ env.WORKING_DIR }} init -backend=false
+      - name: terraform validate
+        run: terraform -chdir=${{ env.WORKING_DIR }} validate
+      - name: terraform test
+        run: terraform -chdir=${{ env.WORKING_DIR }} test
+
+  plan:
+    needs: fmt-validate-test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [ minimal, full ]
+    environment: plan-mg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_MG_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          allow-no-subscriptions: true
+      - name: terraform init
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_MG_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          terraform -chdir=${{ env.WORKING_DIR }} init \
+            -backend-config="resource_group_name=${{ vars.TFSTATE_RG }}" \
+            -backend-config="storage_account_name=${{ vars.TFSTATE_SA }}" \
+            -backend-config="container_name=${{ vars.TFSTATE_CONTAINER }}" \
+            -backend-config="key=management-groups.${{ matrix.scenario }}.tfstate"
+      - name: terraform plan
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_MG_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+        run: |
+          terraform -chdir=${{ env.WORKING_DIR }} plan \
+            -var-file=scenarios/${{ matrix.scenario }}.tfvars \
+            -out=tfplan.${{ matrix.scenario }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-mg-${{ matrix.scenario }}
+          path: ${{ env.WORKING_DIR }}/tfplan.${{ matrix.scenario }}
+          retention-days: 7

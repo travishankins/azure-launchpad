@@ -1,0 +1,62 @@
+name: terraform-apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Deployment scenario"
+        required: true
+        type: choice
+        options: [ baseline, firewall, vpn, full ]
+        default: baseline
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: "1.9.8"
+  TF_IN_AUTOMATION: "1"
+  ARM_USE_AZUREAD: "true"
+  ARM_USE_OIDC: "true"
+  WORKING_DIR: infra/terraform/foundation
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: prod # protected: requires manual approval
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: terraform init
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          terraform -chdir=${{ env.WORKING_DIR }} init \
+            -backend-config="resource_group_name=${{ vars.TFSTATE_RG }}" \
+            -backend-config="storage_account_name=${{ vars.TFSTATE_SA }}" \
+            -backend-config="container_name=${{ vars.TFSTATE_CONTAINER }}" \
+            -backend-config="key=foundation.${{ inputs.scenario }}.tfstate"
+      - name: terraform workspace
+        run: terraform -chdir=${{ env.WORKING_DIR }} workspace select -or-create ${{
+          inputs.scenario }}
+      - name: terraform apply
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          terraform -chdir=${{ env.WORKING_DIR }} apply \
+            -auto-approve \
+            -var-file=scenarios/${{ inputs.scenario }}.tfvars
