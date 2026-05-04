@@ -36,6 +36,36 @@ locals {
 
   spoke_subnet_workload = cidrsubnet(var.address_space_spoke, 3, 0) # /26
 
+  # Availability zone support varies by region. The list below covers regions
+  # that do NOT support AZs (as of 2026); resources in those regions must be
+  # zone-less. Anything not in this list defaults to zone-redundant [1,2,3].
+  _regions_without_zones = [
+    "westcentralus",
+    "northcentralus",
+    "westus",
+    "centralindia",
+    "switzerlandwest",
+    "norwaywest",
+    "uaenorth",
+    "francesouth",
+    "germanynorth",
+    "swedensouth",
+    "brazilsoutheast",
+    "jioindiawest",
+    "jioindiacentral",
+    "australiacentral",
+    "australiacentral2",
+    "australiasoutheast",
+    "southindia",
+    "westindia",
+    "japanwest",
+    "koreasouth",
+    "canadaeast",
+    "ukwest",
+  ]
+  region_supports_zones = !contains(local._regions_without_zones, var.location)
+  availability_zones    = local.region_supports_zones ? ["1", "2", "3"] : []
+
   # Tags
   tags = merge(var.tags, {
     scenario = var.scenario

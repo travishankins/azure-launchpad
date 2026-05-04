@@ -11,7 +11,7 @@ resource "azurerm_public_ip" "vpn" {
   location            = var.location
   allocation_method   = "Static"
   sku                 = "Standard"
-  zones               = ["1", "2", "3"]
+  zones               = local.availability_zones
   tags                = local.tags
 }
 
@@ -27,8 +27,10 @@ resource "azurerm_virtual_network_gateway" "vpn" {
 
   active_active = false
   bgp_enabled   = false
-  sku           = "VpnGw1AZ"
-  generation    = "Generation2"
+  # Azure now requires AZ SKUs for VPN gateways even in regions without AZs
+  # (NonAzSkusNotAllowedForVPNGateway, May 2026 onward).
+  sku        = "VpnGw2AZ"
+  generation = "Generation2"
 
   ip_configuration {
     name                          = "vnetGatewayConfig"

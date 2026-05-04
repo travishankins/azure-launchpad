@@ -10,7 +10,7 @@ resource "azurerm_public_ip" "fw" {
   location            = var.location
   allocation_method   = "Static"
   sku                 = "Standard"
-  zones               = ["1", "2", "3"]
+  zones               = local.availability_zones
   tags                = local.tags
 }
 
@@ -34,7 +34,7 @@ resource "azurerm_public_ip" "fw_mgmt" {
   location            = var.location
   allocation_method   = "Static"
   sku                 = "Standard"
-  zones               = ["1", "2", "3"]
+  zones               = local.availability_zones
   tags                = local.tags
 }
 
@@ -57,7 +57,7 @@ resource "azurerm_firewall" "this" {
   sku_name            = "AZFW_VNet"
   sku_tier            = "Basic"
   firewall_policy_id  = azurerm_firewall_policy.this[0].id
-  zones               = ["1", "2", "3"]
+  zones               = local.availability_zones
 
   ip_configuration {
     name                 = "ipcfg-primary"

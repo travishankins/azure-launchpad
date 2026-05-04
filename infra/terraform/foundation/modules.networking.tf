@@ -62,7 +62,7 @@ resource "azurerm_public_ip" "nat" {
   location            = var.location
   allocation_method   = "Static"
   sku                 = "Standard"
-  zones               = ["1", "2", "3"]
+  zones               = local.availability_zones
   tags                = local.tags
 }
 

@@ -5,16 +5,16 @@ description: GitHub Actions workflows for plan and apply (Terraform + Bicep, fou
 
 This repo ships **8 GitHub Actions workflows** under `.github/workflows/` — a plan + apply pair for each of the four root modules (Terraform foundation, Bicep foundation, Terraform management groups, Bicep management groups).
 
-| Workflow                     | Trigger                                                          | Purpose                                                                                                       |
-| ---------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `terraform-plan.yml`         | PR to `main` touching `infra/terraform/foundation/**`            | `fmt -check`, `validate`, `tfsec`, matrix-`plan` over all 4 scenarios, uploads each plan as an artifact.      |
-| `terraform-apply.yml`        | Manual `workflow_dispatch` (pick scenario)                       | `init`, select workspace, `apply -auto-approve`. Gated by the `prod` environment.                             |
-| `bicep-plan.yml`             | PR to `main` touching `infra/bicep/foundation/**`                | `bicep build`, `az deployment sub what-if` for the chosen scenario, posts results as a PR comment.            |
-| `bicep-apply.yml`            | Manual `workflow_dispatch` or push to `main`                     | `az deployment sub create` for the chosen scenario. Gated by the `apply` environment.                         |
-| `terraform-mg-plan.yml`      | PR to `main` touching `infra/terraform/management-groups/**`     | `validate` + `plan` for the MG hierarchy at tenant scope.                                                     |
-| `terraform-mg-apply.yml`     | Manual `workflow_dispatch`                                       | `apply` for the MG hierarchy. Gated by the `prod-tenant` environment.                                         |
-| `bicep-mg-plan.yml`          | PR to `main` touching `infra/bicep/management-groups/**`         | `bicep build` + `az deployment tenant what-if`.                                                               |
-| `bicep-mg-apply.yml`         | Manual `workflow_dispatch`                                       | `az deployment tenant create`. Gated by the `prod-tenant` environment.                                        |
+| Workflow                 | Trigger                                                      | Purpose                                                                                                  |
+| ------------------------ | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `terraform-plan.yml`     | PR to `main` touching `infra/terraform/foundation/**`        | `fmt -check`, `validate`, `tfsec`, matrix-`plan` over all 4 scenarios, uploads each plan as an artifact. |
+| `terraform-apply.yml`    | Manual `workflow_dispatch` (pick scenario)                   | `init`, select workspace, `apply -auto-approve`. Gated by the `prod` environment.                        |
+| `bicep-plan.yml`         | PR to `main` touching `infra/bicep/foundation/**`            | `bicep build`, `az deployment sub what-if` for the chosen scenario, posts results as a PR comment.       |
+| `bicep-apply.yml`        | Manual `workflow_dispatch` or push to `main`                 | `az deployment sub create` for the chosen scenario. Gated by the `apply` environment.                    |
+| `terraform-mg-plan.yml`  | PR to `main` touching `infra/terraform/management-groups/**` | `validate` + `plan` for the MG hierarchy at tenant scope.                                                |
+| `terraform-mg-apply.yml` | Manual `workflow_dispatch`                                   | `apply` for the MG hierarchy. Gated by the `prod-tenant` environment.                                    |
+| `bicep-mg-plan.yml`      | PR to `main` touching `infra/bicep/management-groups/**`     | `bicep build` + `az deployment tenant what-if`.                                                          |
+| `bicep-mg-apply.yml`     | Manual `workflow_dispatch`                                   | `az deployment tenant create`. Gated by the `prod-tenant` environment.                                   |
 
 ---
 
@@ -108,18 +108,18 @@ az ad app federated-credential create --id $APP_ID --parameters '{
 
 **Settings → Secrets and variables → Actions → Variables** (these are non-sensitive identifiers, so use **Variables**, not **Secrets**):
 
-| Variable                  | Value                                              | Required for                                  |
-| ------------------------- | -------------------------------------------------- | --------------------------------------------- |
-| `AZURE_CLIENT_ID`         | `$APP_ID` from step 2a                             | All workflows                                 |
-| `AZURE_TENANT_ID`         | Your Entra tenant ID                               | All workflows                                 |
-| `AZURE_SUBSCRIPTION_ID`   | Target subscription                                | All workflows                                 |
-| `AZURE_DEFAULT_LOCATION`  | e.g. `westcentralus`                               | Bicep (subscription-scoped deployments)       |
-| `TFSTATE_RG`              | From `bootstrap-state.sh` output                   | Terraform foundation                          |
-| `TFSTATE_SA`              | From `bootstrap-state.sh` output                   | Terraform foundation                          |
-| `TFSTATE_CONTAINER`       | `tfstate`                                          | Terraform foundation                          |
-| `TFSTATE_MG_RG`           | From a separate `bootstrap-state.sh` run, if used  | Terraform management groups (optional)        |
-| `TFSTATE_MG_SA`           | "                                                  | Terraform management groups (optional)        |
-| `TFSTATE_MG_CONTAINER`    | `tfstate-mg`                                       | Terraform management groups (optional)        |
+| Variable                 | Value                                             | Required for                            |
+| ------------------------ | ------------------------------------------------- | --------------------------------------- |
+| `AZURE_CLIENT_ID`        | `$APP_ID` from step 2a                            | All workflows                           |
+| `AZURE_TENANT_ID`        | Your Entra tenant ID                              | All workflows                           |
+| `AZURE_SUBSCRIPTION_ID`  | Target subscription                               | All workflows                           |
+| `AZURE_DEFAULT_LOCATION` | e.g. `westcentralus`                              | Bicep (subscription-scoped deployments) |
+| `TFSTATE_RG`             | From `bootstrap-state.sh` output                  | Terraform foundation                    |
+| `TFSTATE_SA`             | From `bootstrap-state.sh` output                  | Terraform foundation                    |
+| `TFSTATE_CONTAINER`      | `tfstate`                                         | Terraform foundation                    |
+| `TFSTATE_MG_RG`          | From a separate `bootstrap-state.sh` run, if used | Terraform management groups (optional)  |
+| `TFSTATE_MG_SA`          | "                                                 | Terraform management groups (optional)  |
+| `TFSTATE_MG_CONTAINER`   | `tfstate-mg`                                      | Terraform management groups (optional)  |
 
 ---
 
@@ -127,11 +127,11 @@ az ad app federated-credential create --id $APP_ID --parameters '{
 
 **Settings → Environments → New environment**, create these and enable **Required reviewers** on each:
 
-| Environment    | Used by                                              |
-| -------------- | ---------------------------------------------------- |
-| `prod`         | `terraform-apply.yml`                                |
-| `apply`        | `bicep-apply.yml`                                    |
-| `prod-tenant`  | `terraform-mg-apply.yml`, `bicep-mg-apply.yml`       |
+| Environment   | Used by                                        |
+| ------------- | ---------------------------------------------- |
+| `prod`        | `terraform-apply.yml`                          |
+| `apply`       | `bicep-apply.yml`                              |
+| `prod-tenant` | `terraform-mg-apply.yml`, `bicep-mg-apply.yml` |
 
 This forces a human approval click before any apply runs against your subscription or tenant.
 
