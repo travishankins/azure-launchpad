@@ -78,7 +78,7 @@ The Log Analytics workspace is created but **no diagnostic settings are wired up
 - Terraform: a new `diagnostics.tf` referencing `module.log_analytics.resource_id` (or in multi-sub mode, output the LAW ID from the management layer and pass it as a `data.azurerm_log_analytics_workspace` lookup).
 - Bicep: a new `modules/diagnostics.bicep` using `Microsoft.Insights/diagnosticSettings`. In multi-sub mode the LAW lives in the management sub — pass its resource ID as a parameter to the module from each layer that wires diagnostics.
 
-Once attached, see the [Monitoring workbook](/azure-launchpad/governance/monitoring-workbook/) page for a starter visualization over the data.
+Once attached, see the [Monitoring workbook](/governance/monitoring-workbook/) page for a starter visualization over the data.
 
 ## 3. Backup verification
 
@@ -103,7 +103,7 @@ az backup job list \
   --query "[].{operation:properties.operation, status:properties.status, started:properties.startTime}" -o table
 ```
 
-Or open the **Backup job status** tab in the [Monitoring workbook](/azure-launchpad/governance/monitoring-workbook/).
+Or open the **Backup job status** tab in the [Monitoring workbook](/governance/monitoring-workbook/).
 
 ## 4. Cost tracking
 
@@ -114,7 +114,7 @@ Every resource carries the `cost_center` and `workload` tag from `var.tags` plus
 3. Group by tag `workload` to split platform vs landing-zone spend.
 4. In multi-sub mode, group by **subscription** to see the Connectivity / Management / Landing-Zone split that's the whole point of the layer separation.
 
-For a per-sub guardrail, see the [Budgets](/azure-launchpad/governance/budgets/) module.
+For a per-sub guardrail, see the [Budgets](/governance/budgets/) module.
 
 ## 5. Routine ops
 
@@ -122,7 +122,7 @@ A few things you'll want to do periodically once the foundation is in steady sta
 
 | Task                             | Cadence               | How                                                                    |
 | -------------------------------- | --------------------- | ---------------------------------------------------------------------- |
-| `terraform plan` drift detection | Weekly                | CI (see [CI/CD pipeline](/azure-launchpad/reference/cicd/)) or manual  |
+| `terraform plan` drift detection | Weekly                | CI (see [CI/CD pipeline](/reference/cicd/)) or manual  |
 | Bicep what-if drift detection    | Weekly                | `az deployment sub what-if --template-file ... --parameters ...`       |
 | Firewall rule review             | Monthly               | KQL: `AZFWApplicationRule \| summarize count() by Fqdn, Action`        |
 | Soft-deleted KV cleanup          | Monthly               | `az keyvault list-deleted -o table` then `az keyvault purge` once safe |

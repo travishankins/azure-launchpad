@@ -876,9 +876,9 @@ function render(root) {
 
       root.appendChild(el('p', {},
         'See ',
-        el('a', { href: '/azure-launchpad/governance/management-groups/' }, 'Management Groups'),
+        el('a', { href: '/governance/management-groups/' }, 'Management Groups'),
         ' and the ',
-        el('a', { href: '/azure-launchpad/governance/policy-catalog/' }, 'Policy catalog'),
+        el('a', { href: '/governance/policy-catalog/' }, 'Policy catalog'),
         ' for details.',
       ));
     }
@@ -886,9 +886,9 @@ function render(root) {
     root.appendChild(el('h3', {}, 'Next steps'));
     const ul = el('ul');
     [
-      ['Read the full prerequisites checklist', '/azure-launchpad/getting-started/prerequisites/'],
-      [`Architecture diagram for ${scenario}`, `/azure-launchpad/scenarios/${scenario}/`],
-      ['Day-2 operations runbook', '/azure-launchpad/reference/operations/'],
+      ['Read the full prerequisites checklist', '/getting-started/prerequisites/'],
+      [`Architecture diagram for ${scenario}`, `/scenarios/${scenario}/`],
+      ['Day-2 operations runbook', '/reference/day-2-operations/'],
     ].forEach(([t, href]) => ul.appendChild(el('li', {}, el('a', { href }, t))));
     root.appendChild(ul);
 

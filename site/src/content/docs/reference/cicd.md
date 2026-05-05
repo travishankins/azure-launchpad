@@ -141,7 +141,7 @@ This forces a human approval click before any apply runs against your subscripti
 
 ### Foundation (Terraform)
 
-1. Open a PR that adds or edits a tfvars under `infra/terraform/foundation/scenarios/` (or run the [wizard](/azure-launchpad/wizard/) and commit its output).
+1. Open a PR that adds or edits a tfvars under `infra/terraform/foundation/scenarios/` (or run the [wizard](/wizard/) and commit its output).
 2. `terraform-plan.yml` runs automatically; review the plan artifact attached to the PR check.
 3. Merge the PR.
 4. **Actions → terraform-apply → Run workflow**, pick the scenario, click **Run**.

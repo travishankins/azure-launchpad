@@ -7,7 +7,7 @@ description: ~$336/month — adds Azure Firewall (Basic) for centralized egress 
 
 ## What you get
 
-Everything in [baseline](/azure-launchpad/scenarios/baseline/) **except** the spoke NAT Gateway, **plus**:
+Everything in [baseline](/scenarios/baseline/) **except** the spoke NAT Gateway, **plus**:
 
 - `AzureFirewallManagementSubnet` carved from the hub `/23` (required by Firewall Basic)
 - Azure Firewall (Basic SKU, zone-redundant `1/2/3`) with two data PIPs + management PIP

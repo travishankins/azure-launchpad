@@ -258,9 +258,9 @@ gh workflow run site-deploy.yml --repo travishankins/azure-launchpad
 
 ### Local `npm run dev` shows 404 on every link
 
-**Cause:** Astro's base path is `/azure-launchpad/` to match production. The dev server respects that.
+**Cause:** Older builds of this site used a base path of `/azure-launchpad/` to match the GitHub Pages project URL. The site now serves from `/` at the custom domain (`azurelaunchpad.com`), so links should resolve at the root.
 
-**Fix:** Open `http://localhost:4321/azure-launchpad/` (note the trailing slash and base path), not `http://localhost:4321/`.
+**Fix:** Open `http://localhost:4321/`. If you're on an older branch / fork that still sets `base: '/azure-launchpad/'` in `astro.config.mjs`, use `http://localhost:4321/azure-launchpad/` instead, or update the config.
 
 ### Wizard "Copy" button does nothing
 

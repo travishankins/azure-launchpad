@@ -75,4 +75,4 @@ The script is idempotent — re-running it just discovers the existing resources
 If you want plan/apply to run in GitHub Actions, you also need:
 
 - An Entra ID app registration with a federated credential trusting your repo
-- The repo variables listed in [CI/CD pipeline](/azure-launchpad/reference/cicd/)
+- The repo variables listed in [CI/CD pipeline](/reference/cicd/)

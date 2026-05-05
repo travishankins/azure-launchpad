@@ -17,7 +17,7 @@ Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** 
 | `vpn`      | ~$187           | Baseline + VPN Gateway (`VpnGw1AZ`) + gateway transit                       |
 | `full`     | ~$476           | Firewall + VPN combined                                                     |
 
-📘 **Full docs + interactive deployment wizard:** [travishankins.github.io/azure-launchpad](https://travishankins.github.io/azure-launchpad/) — try the [deployment wizard](https://travishankins.github.io/azure-launchpad/wizard/). Source for the site lives in [`site/`](./site/) and is published by [`.github/workflows/site-deploy.yml`](./.github/workflows/site-deploy.yml).
+📘 **Full docs + interactive deployment wizard:** [azurelaunchpad.com](https://azurelaunchpad.com/) — try the [deployment wizard](https://azurelaunchpad.com/wizard/). Source for the site lives in [`site/`](./site/) and is published by [`.github/workflows/site-deploy.yml`](./.github/workflows/site-deploy.yml).
 
 ## Prerequisites
 

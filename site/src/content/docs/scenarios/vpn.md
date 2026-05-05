@@ -11,7 +11,7 @@ Microsoft retired the non-AZ `VpnGw1`–`VpnGw5` SKUs in May 2026 (`NonAzSkusNot
 
 ## What you get
 
-Everything in [baseline](/azure-launchpad/scenarios/baseline/) **plus**:
+Everything in [baseline](/scenarios/baseline/) **plus**:
 
 - VPN public IP (Standard, zonal)
 - `azurerm_virtual_network_gateway` (`Vpn` / `RouteBased` / `VpnGw2AZ` / Generation 2)

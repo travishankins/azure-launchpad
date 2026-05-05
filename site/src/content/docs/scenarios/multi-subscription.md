@@ -471,7 +471,7 @@ Don't try to `terraform state mv` across subscription boundaries — Terraform's
 
 ### Cost visibility per layer
 
-Each sub gets its own invoice. The repo's optional budget module ([Budgets](/azure-launchpad/governance/budgets/)) lands the budget on the **management** sub by default in multi-sub mode. If you want a budget per layer, deploy the budget module three times (one per sub) with three different `subscription_id` values.
+Each sub gets its own invoice. The repo's optional budget module ([Budgets](/governance/budgets/)) lands the budget on the **management** sub by default in multi-sub mode. If you want a budget per layer, deploy the budget module three times (one per sub) with three different `subscription_id` values.
 
 ## Migrating from single → multi
 

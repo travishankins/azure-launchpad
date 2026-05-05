@@ -12,7 +12,7 @@ Both produce **the exact same Azure architecture** (identical RGs, networking, s
 - **Terraform** — best if you're multi-cloud, already use HashiCorp tooling, or want a single state file you can `import` and refactor freely. Brings the AVM ecosystem and a mature testing story (`terraform test`).
 - **Bicep** — best if you're Microsoft-only, want zero extra tooling beyond `az`, prefer ARM-native deployments tracked in the portal, and don't want to manage a remote state backend.
 
-The [deployment wizard](/azure-launchpad/wizard/) asks this as question #1 and emits the matching parameter file + commands.
+The [deployment wizard](/wizard/) asks this as question #1 and emits the matching parameter file + commands.
 
 ### Can I switch from Terraform to Bicep (or vice versa) later?
 
@@ -51,7 +51,7 @@ SMB cost-tier alignment. Standard adds ~$700/mo, IDPS, TLS inspection, threat in
 
 The **foundation** module is intentionally subscription-scoped. MG / policy / Defender plans live one layer above the landing zone and would prevent the module from running in customer subscriptions where you only have Contributor.
 
-If you do want them, this repo also ships an **opt-in, separate** module: [management-groups](/azure-launchpad/governance/management-groups/). It deploys an ALZ-aligned hierarchy (including the new `Local` MG from ALZ 2026.04) and lets you pick which built-in policy initiatives to assign — see the [policy catalog](/azure-launchpad/governance/policy-catalog/). It's separate because it needs tenant-root permissions and its own state.
+If you do want them, this repo also ships an **opt-in, separate** module: [management-groups](/governance/management-groups/). It deploys an ALZ-aligned hierarchy (including the new `Local` MG from ALZ 2026.04) and lets you pick which built-in policy initiatives to assign — see the [policy catalog](/governance/policy-catalog/). It's separate because it needs tenant-root permissions and its own state.
 
 ### Can I extend this for additional spokes?
 
@@ -103,11 +103,11 @@ Bicep doesn't have explicit state — every `az deployment sub create` posts an 
 
 ### Does `terraform destroy` clean everything up?
 
-Almost. Soft-deleted Key Vaults remain for 7 days (and block name reuse). See [Day-2 operations](/azure-launchpad/reference/day-2-operations/) for `az keyvault purge`. The state RG (`rg-tfstate-*`) is intentionally **not** Terraform-managed — delete manually after customer offboarding.
+Almost. Soft-deleted Key Vaults remain for 7 days (and block name reuse). See [Day-2 operations](/reference/day-2-operations/) for `az keyvault purge`. The state RG (`rg-tfstate-*`) is intentionally **not** Terraform-managed — delete manually after customer offboarding.
 
 ### How do I tear down a Bicep deployment?
 
-Bicep has no `destroy`. Delete the resource groups directly: `az group delete --name <rg> --yes --no-wait` for each of the 6 RGs. See [Day-2 operations](/azure-launchpad/reference/day-2-operations/) for the full loop.
+Bicep has no `destroy`. Delete the resource groups directly: `az group delete --name <rg> --yes --no-wait` for each of the 6 RGs. See [Day-2 operations](/reference/day-2-operations/) for the full loop.
 
 ---
 
@@ -115,7 +115,7 @@ Bicep has no `destroy`. Delete the resource groups directly: `az group delete --
 
 ### How do I set up the OIDC service principal?
 
-Full step-by-step is on the [CI/CD pipeline](/azure-launchpad/reference/cicd/) page (steps 2 and 3). One service principal works for all 8 workflows.
+Full step-by-step is on the [CI/CD pipeline](/reference/cicd/) page (steps 2 and 3). One service principal works for all 8 workflows.
 
 ### Do I need separate Azure credentials for Terraform vs Bicep?
 
@@ -139,7 +139,7 @@ Bicep modules pin versions in their `br/public:avm/...` references. To bump, sea
 
 ### How do I add diagnostic settings?
 
-The Log Analytics workspace is created but not wired up by default (to avoid hitting the per-resource diagnostic settings cap). Add them in `diagnostics.tf` (Terraform) or a new `modules/diagnostics.bicep` (Bicep). See [Day-2 operations](/azure-launchpad/reference/day-2-operations/) for which categories to enable per resource type.
+The Log Analytics workspace is created but not wired up by default (to avoid hitting the per-resource diagnostic settings cap). Add them in `diagnostics.tf` (Terraform) or a new `modules/diagnostics.bicep` (Bicep). See [Day-2 operations](/reference/day-2-operations/) for which categories to enable per resource type.
 
 ### Can I add custom resources alongside this?
 

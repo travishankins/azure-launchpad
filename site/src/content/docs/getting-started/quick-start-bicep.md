@@ -48,7 +48,7 @@ That's it. To switch scenarios, just point `--parameters` at a different `.bicep
 
 The two roots manage the *same* resource names by design (`rg-hub-contoso-wcus`, `vnet-hub-contoso-wcus`, etc.). **Do not** run both against the same subscription with the same `namePrefix`/`name_prefix` — pick one IaC and stick with it for that environment.
 
-> **Tip** — use the [deployment wizard](/azure-launchpad/wizard/) and pick **Bicep** at step 1 to generate a `wizard.bicepparam` file tailored to your customer's needs.
+> **Tip** — use the [deployment wizard](/wizard/) and pick **Bicep** at step 1 to generate a `wizard.bicepparam` file tailored to your customer's needs.
 
 ## Management Groups (Bicep, tenant scope)
 

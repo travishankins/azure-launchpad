@@ -6,11 +6,11 @@ hero:
   tagline: Launch an Azure Landing Zone (ALZ) based on Microsoft’s Cloud Adoption Framework—preconfigured with hub-spoke networking, governance, identity, and observability from day one. Designed for SMB and SMEC organizations so small platform teams can deploy, manage, and scale with confidence.
   actions:
     - text: Open the deployment wizard
-      link: /azure-launchpad/wizard/
+      link: /wizard/
       icon: right-arrow
       variant: primary
     - text: Compare scenarios
-      link: /azure-launchpad/scenarios/
+      link: /scenarios/
       icon: external
     - text: View on GitHub
       link: https://github.com/travishankins/azure-launchpad
@@ -25,12 +25,12 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
 <CardGrid>
   <Card title="New here?" icon="open-book">
     Learn what this repo solves and how the hub-spoke pattern is wired together.
-    [Read the architecture →](/azure-launchpad/reference/architecture/)
+    [Read the architecture →](/reference/architecture/)
   </Card>
   <Card title="Ready to deploy" icon="rocket">
     Answer a few questions and walk away with a ready-to-use parameter file
     (Terraform `.tfvars` or Bicep `.bicepparam`) and the exact CLI commands to
-    run. [Open the wizard →](/azure-launchpad/wizard/)
+    run. [Open the wizard →](/wizard/)
   </Card>
 </CardGrid>
 
@@ -38,7 +38,7 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
   <CardGrid>
     <Card title="Already deployed" icon="setting">
       Day-2 ops: monitoring, backup verification, cost tracking, teardown.
-      [Day-2 operations →](/azure-launchpad/reference/day-2-operations/)
+      [Day-2 operations →](/reference/day-2-operations/)
     </Card>
   </CardGrid>
 </div>
@@ -54,7 +54,7 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
       Analytics, Recovery Services.
     </p>
     <p>
-      <a href="/azure-launchpad/scenarios/baseline/">Details →</a>
+      <a href="/scenarios/baseline/">Details →</a>
     </p>
   </div>
   <div class="scenario-card">
@@ -65,7 +65,7 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
       forces 0.0.0.0/0 through the firewall.
     </p>
     <p>
-      <a href="/azure-launchpad/scenarios/firewall/">Details →</a>
+      <a href="/scenarios/firewall/">Details →</a>
     </p>
   </div>
   <div class="scenario-card">
@@ -76,7 +76,7 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
       customer's on-premises network.
     </p>
     <p>
-      <a href="/azure-launchpad/scenarios/vpn/">Details →</a>
+      <a href="/scenarios/vpn/">Details →</a>
     </p>
   </div>
   <div class="scenario-card">
@@ -87,7 +87,7 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
       workloads.
     </p>
     <p>
-      <a href="/azure-launchpad/scenarios/full/">Details →</a>
+      <a href="/scenarios/full/">Details →</a>
     </p>
   </div>
 </div>

@@ -3,13 +3,15 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import mermaid from 'astro-mermaid';
 
-// Repo name -> base path for GitHub Pages project sites.
+// Custom domain (azurelaunchpad.com) — apex hosted on Cloudflare DNS,
+// proxied by GitHub Pages. The legacy GitHub Pages URL
+// (travishankins.github.io/azure-launchpad) automatically redirects.
 const REPO = 'azure-launchpad';
 const OWNER = process.env.GH_OWNER ?? 'travishankins';
 
 export default defineConfig({
-  site: `https://${OWNER}.github.io`,
-  base: process.env.SITE_BASE ?? `/${REPO}/`,
+  site: process.env.SITE_URL ?? 'https://azurelaunchpad.com',
+  base: process.env.SITE_BASE ?? '/',
   redirects: {
     // Renamed 2026-05: Foundation Health workbook -> Monitoring workbook.
     '/governance/workbook/': '/governance/monitoring-workbook/',

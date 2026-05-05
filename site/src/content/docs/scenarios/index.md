@@ -24,4 +24,4 @@ Every scenario shares the same hub-spoke topology. You only add what the custome
 - **Both?** → `full`.
 - **Neither?** → `baseline`.
 
-The [wizard](/azure-launchpad/wizard/) walks you through this in 30 seconds and emits a tfvars file.
+The [wizard](/wizard/) walks you through this in 30 seconds and emits a tfvars file.

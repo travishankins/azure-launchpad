@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://travishankins.github.io/azure-launchpad/sitemap-index.xml
+Sitemap: https://azurelaunchpad.com/sitemap-index.xml
