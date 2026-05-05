@@ -3,51 +3,47 @@ title: Multi-subscription (ALZ split)
 description: ALZ-aligned deployment across Connectivity / Management / Landing-Zone subscriptions.
 ---
 
-import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
-
 The foundation supports two deployment modes:
 
-| Mode      | Subs | Best for                                                                |
-| --------- | ---- | ----------------------------------------------------------------------- |
-| `single`  | 1    | SMB starter — everything in one sub. **Default.**                       |
-| `multi`   | 3    | ALZ-aligned platform/workload separation — Connectivity / Management / Landing-Zone |
+| Mode     | Subs | Best for                                                                            |
+| -------- | ---- | ----------------------------------------------------------------------------------- |
+| `single` | 1    | SMB starter — everything in one sub. **Default.**                                   |
+| `multi`  | 3    | ALZ-aligned platform/workload separation — Connectivity / Management / Landing-Zone |
 
 This page covers **`multi`** mode. For the simpler default, see the rest of the docs — single-sub is what every other page assumes.
 
 ## What lands where
 
-| Subscription      | Resource groups                                         | Resources                                                                                                  |
-| ----------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| **Connectivity**  | `rg-hub-<suffix>`                                       | Hub VNet, Azure Firewall (`firewall`/`full`), VPN Gateway (`vpn`/`full`), Private DNS for Key Vault, hub-side peering |
-| **Management**    | `rg-monitor-<suffix>`, `rg-backup-<suffix>`             | Log Analytics workspace, Automation Account, Recovery Services Vault, optional Foundation Health workbook + subscription budget |
-| **Landing-Zone**  | `rg-spoke-prod-<suffix>`, `rg-security-<suffix>`, `rg-migrate-<suffix>` | Spoke VNet, NAT Gateway (when no firewall), Key Vault with private endpoint, spoke-side peering, spoke route table (`firewall`/`full` — TF only in v1) |
+| Subscription     | Resource groups                                                         | Resources                                                                                                                                              |
+| ---------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Connectivity** | `rg-hub-<suffix>`                                                       | Hub VNet, Azure Firewall (`firewall`/`full`), VPN Gateway (`vpn`/`full`), Private DNS for Key Vault, hub-side peering                                  |
+| **Management**   | `rg-monitor-<suffix>`, `rg-backup-<suffix>`                             | Log Analytics workspace, Automation Account, Recovery Services Vault, optional Foundation Health workbook + subscription budget                        |
+| **Landing-Zone** | `rg-spoke-prod-<suffix>`, `rg-security-<suffix>`, `rg-migrate-<suffix>` | Spoke VNet, NAT Gateway (when no firewall), Key Vault with private endpoint, spoke-side peering, spoke route table (`firewall`/`full` — TF only in v1) |
 
 ## Coverage matrix
 
-| Scenario   | Terraform multi-sub | Bicep multi-sub                                       |
-| ---------- | ------------------- | ----------------------------------------------------- |
-| `baseline` | ✅                   | ✅                                                     |
-| `firewall` | ✅                   | ⚠️ v1 follow-up (cross-sub spoke route table needed)   |
-| `vpn`      | ✅                   | ⚠️ v1 follow-up                                        |
-| `full`     | ✅                   | ⚠️ v1 follow-up                                        |
+| Scenario   | Terraform multi-sub | Bicep multi-sub                                      |
+| ---------- | ------------------- | ---------------------------------------------------- |
+| `baseline` | ✅                  | ✅                                                   |
+| `firewall` | ✅                  | ⚠️ v1 follow-up (cross-sub spoke route table needed) |
+| `vpn`      | ✅                  | ⚠️ v1 follow-up                                      |
+| `full`     | ✅                  | ⚠️ v1 follow-up                                      |
 
 If you want firewall or VPN with multi-sub today, use the Terraform path — its provider-alias model handles all four scenarios cleanly.
 
 ## Required RBAC
 
-| Principal needs           | On                                                                      |
-| ------------------------- | ----------------------------------------------------------------------- |
-| `Contributor`             | Each of the three subscriptions                                         |
-| `Network Contributor`     | Hub VNet in the connectivity sub (granted automatically by Azure on cross-sub peering, or explicit RBAC if you peer manually) |
-| `Network Contributor`     | KV Private DNS Zone in the connectivity sub (required to link the PDZ to the spoke VNet for name resolution from spoke workloads) |
+| Principal needs       | On                                                                                                                                |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `Contributor`         | Each of the three subscriptions                                                                                                   |
+| `Network Contributor` | Hub VNet in the connectivity sub (granted automatically by Azure on cross-sub peering, or explicit RBAC if you peer manually)     |
+| `Network Contributor` | KV Private DNS Zone in the connectivity sub (required to link the PDZ to the spoke VNet for name resolution from spoke workloads) |
 
 There is **no tenant-root requirement**. No `Owner`, no `Management Group Contributor`.
 
 ## Terraform deploy
 
-<Aside type="note" title="State file naming">
-Multi-sub state lands at key `foundation.<scenario>.multi.tfstate` (note the `.multi` suffix) so it never collides with a single-sub deploy of the same scenario.
-</Aside>
+> **State file naming:** Multi-sub state lands at key `foundation.<scenario>.multi.tfstate` (note the `.multi` suffix) so it never collides with a single-sub deploy of the same scenario.
 
 ```hcl
 # wizard.auto.tfvars (or hand-rolled)
