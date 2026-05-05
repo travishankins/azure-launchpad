@@ -12,77 +12,126 @@ All four scenarios share the same hub-spoke topology and naming. The diagrams be
 | Hub VNet   | `10.0.0.0/23` | `AzureFirewallSubnet` (`/26`), `GatewaySubnet` (`/26`), `default` (`/26`), `AzureFirewallManagementSubnet` (`/26`, firewall scenarios only) |
 | Spoke VNet | `10.0.2.0/23` | `snet-workload` (`/26`)                                                                                                                     |
 
+## Scenarios at a glance
+
+| Capability                         | baseline | firewall | vpn | full |
+| ---------------------------------- | :------: | :------: | :-: | :--: |
+| Hub + spoke VNets + peering        |    ✅    |    ✅    | ✅  |  ✅  |
+| Spoke egress via NAT Gateway       |    ✅    |    —     | ✅  |  —   |
+| Spoke egress via Azure Firewall    |    —     |    ✅    | —   |  ✅  |
+| Route Table 0/0 → firewall private IP |  —    |    ✅    | —   |  ✅  |
+| VPN Gateway (S2S to on-prem)       |    —     |    —     | ✅  |  ✅  |
+| Gateway transit on peering         |    —     |    —     | ✅  |  ✅  |
+| Key Vault + Private Endpoint       |    ✅    |    ✅    | ✅  |  ✅  |
+| Log Analytics + Automation + RSV   |    ✅    |    ✅    | ✅  |  ✅  |
+
 ## Baseline
 
-```mermaid
-flowchart LR
-    subgraph Hub[Hub VNet 10.0.0.0/23]
-      H_default[default subnet]
-    end
-    subgraph Spoke[Spoke VNet 10.0.2.0/23]
-      S_workload[snet-workload]
-      NAT[NAT Gateway]
-      S_workload --- NAT
-    end
-    NAT --> Internet((Internet))
-    KV[Key Vault PE] --- S_workload
-    LA[Log Analytics]:::shared
-    RSV[Recovery Vault]:::shared
-    classDef shared fill:#eef
+Spoke egresses to internet through its own NAT Gateway. Hub is mostly an empty VNet — present so future scenarios can promote in place without re-IP'ing.
+
+```text
+                      ┌────────────────────────────────────┐
+                      │  Hub VNet  10.0.0.0/23             │
+                      │  └─ default subnet                 │
+                      └────────────────────────────────────┘
+                                     ▲
+                            VNet peering (no transit)
+                                     ▼
+┌──────────────────────────────────────────────────────────────────┐
+│  Spoke VNet  10.0.2.0/23                                         │
+│  ┌──────────────────────────┐                                    │
+│  │ snet-workload            │── NAT Gateway ──▶ ((Internet))     │
+│  │   • Key Vault PE         │                                    │
+│  └──────────────────────────┘                                    │
+└──────────────────────────────────────────────────────────────────┘
+
+Shared (sent to Log Analytics, backed up to RSV):
+  Log Analytics workspace · Automation Account · Recovery Services Vault
 ```
 
 ## Firewall
 
-```mermaid
-flowchart LR
-    subgraph Hub[Hub VNet]
-      AF[Azure Firewall Basic]
-      MGT[ManagementSubnet]
-      AF --- MGT
-    end
-    subgraph Spoke[Spoke VNet]
-      S_workload[snet-workload]
-      RT[Route Table 0/0 → AF]
-      S_workload --- RT
-    end
-    Spoke <-- peering --> Hub
-    S_workload -- 0/0 --> AF
-    AF --> Internet((Internet))
+Spoke egress is forced through Azure Firewall Basic in the hub. NAT Gateway is **not** deployed in the spoke — the firewall's public IPs are the egress identity.
+
+```text
+┌────────────────────────────────────────────────────────────┐
+│  Hub VNet                                                  │
+│  ┌──────────────────────────┐  ┌─────────────────────────┐ │
+│  │ AzureFirewallSubnet      │  │ AzureFirewall-          │ │
+│  │   • Azure Firewall Basic │──│ ManagementSubnet        │ │
+│  │     (private IP 10.0.0.4)│  └─────────────────────────┘ │
+│  └─────────┬────────────────┘                              │
+└────────────┼───────────────────────────────────────────────┘
+             │  ▲                              ((Internet))
+             │  │ VNet peering                       ▲
+             │  │                                    │
+             ▼  │                          ┌─────────┴───────┐
+┌────────────────────────────────────────┐ │ Firewall PIPs   │
+│  Spoke VNet                            │ │ (data + mgmt)   │
+│  ┌──────────────────────────────────┐  │ └─────────────────┘
+│  │ snet-workload                    │  │
+│  │   • Key Vault PE                 │  │
+│  │   • UDR 0.0.0.0/0 → 10.0.0.4 ────┼──┘
+│  └──────────────────────────────────┘  │
+└────────────────────────────────────────┘
 ```
 
 ## VPN
 
-```mermaid
-flowchart LR
-    subgraph Hub[Hub VNet]
-      VPN[VPN Gateway VpnGw2AZ]
-    end
-    subgraph Spoke[Spoke VNet]
-      S_workload[snet-workload]
-      NAT[NAT Gateway]
-      S_workload --- NAT
-    end
-    Spoke <-- peering<br/>(gateway transit) --> Hub
-    OnPrem((On-prem network)) <-- IPsec --> VPN
-    NAT --> Internet((Internet))
+Spoke egresses to internet via NAT (same as baseline). On-prem reaches the spoke through a VPN Gateway in the hub. Peering uses **gateway transit**.
+
+```text
+                    ((On-prem network))
+                            ▲
+                            │ IPsec S2S
+                            ▼
+              ┌─────────────────────────────────┐
+              │  Hub VNet                       │
+              │  ┌───────────────────────────┐  │
+              │  │ GatewaySubnet             │  │
+              │  │   • VPN Gateway VpnGw2AZ  │  │
+              │  └───────────────────────────┘  │
+              └─────────────────────────────────┘
+                            ▲
+                  VNet peering (gateway transit)
+                            ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Spoke VNet                                                  │
+│  ┌──────────────────────────┐                                │
+│  │ snet-workload            │── NAT Gateway ──▶ ((Internet)) │
+│  │   • Key Vault PE         │                                │
+│  └──────────────────────────┘                                │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ## Full
 
-```mermaid
-flowchart LR
-    subgraph Hub[Hub VNet]
-      AF[Azure Firewall Basic]
-      VPN[VPN Gateway VpnGw2AZ]
-    end
-    subgraph Spoke[Spoke VNet]
-      S_workload[snet-workload]
-      RT[Route Table 0/0 → AF]
-    end
-    Spoke <-- peering<br/>(gateway transit) --> Hub
-    S_workload --> RT
-    RT --> AF --> Internet((Internet))
-    OnPrem((On-prem)) <-- IPsec --> VPN
+Both firewall and VPN. Spoke egress goes through the firewall; on-prem reaches the spoke through the VPN gateway via gateway transit.
+
+```text
+                    ((On-prem network))         ((Internet))
+                            ▲                         ▲
+                            │ IPsec S2S               │
+                            ▼                         │
+┌────────────────────────────────────────────────────────────┐
+│  Hub VNet                                                  │
+│  ┌─────────────────────────┐  ┌─────────────────────────┐  │
+│  │ GatewaySubnet           │  │ AzureFirewallSubnet     │  │
+│  │   • VPN Gateway         │  │   • Azure Firewall      │──┘
+│  └─────────────────────────┘  │     (private IP 10.0.0.4)│
+│                               └────────┬────────────────┘  │
+└────────────────────────────────────────┼───────────────────┘
+              ▲                          │
+   VNet peering (gateway transit)        │
+              ▼                          │
+┌────────────────────────────────────────┼───────────────────┐
+│  Spoke VNet                            │                   │
+│  ┌─────────────────────────────────┐   │                   │
+│  │ snet-workload                   │   │                   │
+│  │   • Key Vault PE                │   │                   │
+│  │   • UDR 0.0.0.0/0 → 10.0.0.4 ───┼───┘                   │
+│  └─────────────────────────────────┘                       │
+└────────────────────────────────────────────────────────────┘
 ```
 
 ## Module composition
