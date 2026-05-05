@@ -1,0 +1,86 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.42.1.51946",
+      "templateHash": "16837017827990115690"
+    }
+  },
+  "parameters": {
+    "suffix": {
+      "type": "string",
+      "metadata": {
+        "description": "Short suffix used in the budget name (e.g. contoso-wcus)."
+      }
+    },
+    "amount": {
+      "type": "int",
+      "defaultValue": 100,
+      "minValue": 1,
+      "metadata": {
+        "description": "Monthly budget amount in the subscription billing currency."
+      }
+    },
+    "thresholds": {
+      "type": "array",
+      "defaultValue": [
+        50,
+        80,
+        100
+      ],
+      "metadata": {
+        "description": "Percent-of-budget thresholds for Actual-spend alerts."
+      }
+    },
+    "alertEmails": {
+      "type": "array",
+      "minLength": 1,
+      "metadata": {
+        "description": "Email recipients for budget alerts. At least one required."
+      }
+    },
+    "resourceGroupNames": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Optional list of resource group names to scope the budget to. Empty => entire subscription."
+      }
+    },
+    "startDate": {
+      "type": "string",
+      "defaultValue": "[format('{0}-01T00:00:00Z', utcNow('yyyy-MM'))]",
+      "metadata": {
+        "description": "First-of-month start date for the budget time period (YYYY-MM-DDT00:00:00Z)."
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Consumption/budgets",
+      "apiVersion": "2023-11-01",
+      "name": "[format('budget-{0}', parameters('suffix'))]",
+      "properties": {
+        "amount": "[parameters('amount')]",
+        "timeGrain": "Monthly",
+        "timePeriod": {
+          "startDate": "[parameters('startDate')]"
+        },
+        "category": "Cost",
+        "filter": "[if(empty(parameters('resourceGroupNames')), null(), createObject('dimensions', createObject('name', 'ResourceGroupName', 'operator', 'In', 'values', parameters('resourceGroupNames'))))]",
+        "notifications": "[union(toObject(parameters('thresholds'), lambda('t', format('Actual_GreaterThan_{0}_Percent', lambdaVariables('t'))), lambda('t', createObject('enabled', true(), 'operator', 'GreaterThan', 'threshold', lambdaVariables('t'), 'thresholdType', 'Actual', 'contactEmails', parameters('alertEmails')))), createObject('Forecasted_GreaterThan_100_Percent', createObject('enabled', true(), 'operator', 'GreaterThan', 'threshold', 100, 'thresholdType', 'Forecasted', 'contactEmails', parameters('alertEmails'))))]"
+      }
+    }
+  ],
+  "outputs": {
+    "budgetId": {
+      "type": "string",
+      "value": "[subscriptionResourceId('Microsoft.Consumption/budgets', format('budget-{0}', parameters('suffix')))]"
+    },
+    "budgetName": {
+      "type": "string",
+      "value": "[format('budget-{0}', parameters('suffix'))]"
+    }
+  }
+}

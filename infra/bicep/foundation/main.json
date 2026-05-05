@@ -1,0 +1,1589 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.42.1.51946",
+      "templateHash": "5788595334823518699"
+    }
+  },
+  "parameters": {
+    "scenario": {
+      "type": "string",
+      "allowedValues": [
+        "baseline",
+        "firewall",
+        "vpn",
+        "full"
+      ],
+      "metadata": {
+        "description": "Deployment scenario."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "westcentralus",
+      "metadata": {
+        "description": "Azure region for all resources."
+      }
+    },
+    "regionShort": {
+      "type": "string",
+      "defaultValue": "wcus",
+      "metadata": {
+        "description": "Short region code used in resource names (e.g. wcus, eus)."
+      }
+    },
+    "namePrefix": {
+      "type": "string",
+      "defaultValue": "contoso",
+      "minLength": 2,
+      "maxLength": 8,
+      "metadata": {
+        "description": "Short prefix for resource names. 2-8 lowercase alphanumerics."
+      }
+    },
+    "addressSpaceHub": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/23",
+      "metadata": {
+        "description": "Hub VNet CIDR (must be a /23 to fit firewall + gateway + default + mgmt subnets)."
+      }
+    },
+    "addressSpaceSpoke": {
+      "type": "string",
+      "defaultValue": "10.0.2.0/23",
+      "metadata": {
+        "description": "Spoke VNet CIDR."
+      }
+    },
+    "onPremisesAddressSpace": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "On-premises CIDRs. Required for vpn/full scenarios (used by VPN local network gateways and route tables)."
+      }
+    },
+    "logRetentionDays": {
+      "type": "int",
+      "defaultValue": 30,
+      "minValue": 30,
+      "maxValue": 730,
+      "metadata": {
+        "description": "Log Analytics workspace retention in days."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "workload": "azure-launchpad",
+        "iac": "bicep",
+        "cost_center": "platform"
+      },
+      "metadata": {
+        "description": "Base tags applied to all resources."
+      }
+    },
+    "budgetEnabled": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable a subscription-scoped monthly budget with email alerts. Free."
+      }
+    },
+    "budgetAmount": {
+      "type": "int",
+      "defaultValue": 100,
+      "minValue": 1,
+      "metadata": {
+        "description": "Monthly budget amount (USD or subscription billing currency)."
+      }
+    },
+    "budgetThresholds": {
+      "type": "array",
+      "defaultValue": [
+        50,
+        80,
+        100
+      ],
+      "metadata": {
+        "description": "Percent-of-budget thresholds for Actual-spend alerts."
+      }
+    },
+    "budgetAlertEmails": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Email recipients for budget alerts. Required when budgetEnabled = true."
+      }
+    }
+  },
+  "variables": {
+    "useFirewall": "[or(equals(parameters('scenario'), 'firewall'), equals(parameters('scenario'), 'full'))]",
+    "useVpn": "[or(equals(parameters('scenario'), 'vpn'), equals(parameters('scenario'), 'full'))]",
+    "useNat": "[not(variables('useFirewall'))]",
+    "usePeering": "[or(variables('useFirewall'), variables('useVpn'))]",
+    "regionsWithoutZones": [
+      "westcentralus",
+      "northcentralus",
+      "westus",
+      "centralindia",
+      "switzerlandwest",
+      "norwaywest",
+      "uaenorth",
+      "francesouth",
+      "germanynorth",
+      "swedensouth",
+      "brazilsoutheast",
+      "jioindiawest",
+      "jioindiacentral",
+      "australiacentral",
+      "australiacentral2",
+      "australiasoutheast",
+      "southindia",
+      "westindia",
+      "japanwest",
+      "koreasouth",
+      "canadaeast",
+      "ukwest"
+    ],
+    "regionSupportsZones": "[not(contains(variables('regionsWithoutZones'), parameters('location')))]",
+    "availabilityZones": "[if(variables('regionSupportsZones'), createArray('1', '2', '3'), createArray())]",
+    "suffix": "[format('{0}-{1}', parameters('namePrefix'), parameters('regionShort'))]",
+    "rgNames": {
+      "hub": "[format('rg-hub-{0}', variables('suffix'))]",
+      "spoke": "[format('rg-spoke-prod-{0}', variables('suffix'))]",
+      "monitor": "[format('rg-monitor-{0}', variables('suffix'))]",
+      "backup": "[format('rg-backup-{0}', variables('suffix'))]",
+      "security": "[format('rg-security-{0}', variables('suffix'))]",
+      "migrate": "[format('rg-migrate-{0}', variables('suffix'))]"
+    },
+    "hubSubnetAfw": "[cidrSubnet(parameters('addressSpaceHub'), 26, 0)]",
+    "hubSubnetGateway": "[cidrSubnet(parameters('addressSpaceHub'), 26, 1)]",
+    "hubSubnetDefault": "[cidrSubnet(parameters('addressSpaceHub'), 26, 2)]",
+    "hubSubnetAfwMgmt": "[cidrSubnet(parameters('addressSpaceHub'), 26, 3)]",
+    "spokeSubnetWorkload": "[cidrSubnet(parameters('addressSpaceSpoke'), 26, 0)]",
+    "mergedTags": "[union(parameters('tags'), createObject('scenario', parameters('scenario'), 'location', parameters('location')))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2024-03-01",
+      "name": "[variables('rgNames').hub]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('mergedTags')]"
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2024-03-01",
+      "name": "[variables('rgNames').spoke]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('mergedTags')]"
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2024-03-01",
+      "name": "[variables('rgNames').monitor]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('mergedTags')]"
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2024-03-01",
+      "name": "[variables('rgNames').backup]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('mergedTags')]"
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2024-03-01",
+      "name": "[variables('rgNames').security]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('mergedTags')]"
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2024-03-01",
+      "name": "[variables('rgNames').migrate]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('mergedTags')]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "mod-networking",
+      "resourceGroup": "[variables('rgNames').hub]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "suffix": {
+            "value": "[variables('suffix')]"
+          },
+          "addressSpaceHub": {
+            "value": "[parameters('addressSpaceHub')]"
+          },
+          "addressSpaceSpoke": {
+            "value": "[parameters('addressSpaceSpoke')]"
+          },
+          "hubSubnetAfw": {
+            "value": "[variables('hubSubnetAfw')]"
+          },
+          "hubSubnetGateway": {
+            "value": "[variables('hubSubnetGateway')]"
+          },
+          "hubSubnetDefault": {
+            "value": "[variables('hubSubnetDefault')]"
+          },
+          "spokeSubnetWorkload": {
+            "value": "[variables('spokeSubnetWorkload')]"
+          },
+          "spokeRgName": {
+            "value": "[variables('rgNames').spoke]"
+          },
+          "useNat": {
+            "value": "[variables('useNat')]"
+          },
+          "usePeering": {
+            "value": "[variables('usePeering')]"
+          },
+          "useVpn": {
+            "value": "[variables('useVpn')]"
+          },
+          "availabilityZones": {
+            "value": "[variables('availabilityZones')]"
+          },
+          "tags": {
+            "value": "[variables('mergedTags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "1170743710077613242"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "suffix": {
+              "type": "string"
+            },
+            "addressSpaceHub": {
+              "type": "string"
+            },
+            "addressSpaceSpoke": {
+              "type": "string"
+            },
+            "hubSubnetAfw": {
+              "type": "string"
+            },
+            "hubSubnetGateway": {
+              "type": "string"
+            },
+            "hubSubnetDefault": {
+              "type": "string"
+            },
+            "spokeSubnetWorkload": {
+              "type": "string"
+            },
+            "spokeRgName": {
+              "type": "string"
+            },
+            "useNat": {
+              "type": "bool"
+            },
+            "usePeering": {
+              "type": "bool"
+            },
+            "useVpn": {
+              "type": "bool"
+            },
+            "availabilityZones": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "Availability zones for zonal resources (e.g. NAT PIP). Pass [] in regions without AZ support."
+              }
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2024-05-01",
+              "name": "[format('vnet-hub-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('addressSpaceHub')]"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "AzureFirewallSubnet",
+                    "properties": {
+                      "addressPrefix": "[parameters('hubSubnetAfw')]"
+                    }
+                  },
+                  {
+                    "name": "GatewaySubnet",
+                    "properties": {
+                      "addressPrefix": "[parameters('hubSubnetGateway')]"
+                    }
+                  },
+                  {
+                    "name": "default",
+                    "properties": {
+                      "addressPrefix": "[parameters('hubSubnetDefault')]"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "condition": "[parameters('useNat')]",
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2024-05-01",
+              "name": "[format('pip-nat-spoke-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "zones": "[parameters('availabilityZones')]",
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              }
+            },
+            {
+              "condition": "[parameters('useNat')]",
+              "type": "Microsoft.Network/natGateways",
+              "apiVersion": "2024-05-01",
+              "name": "[format('natgw-spoke-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "properties": {
+                "idleTimeoutInMinutes": 4,
+                "publicIpAddresses": [
+                  {
+                    "id": "[resourceId('Microsoft.Network/publicIPAddresses', format('pip-nat-spoke-{0}', parameters('suffix')))]"
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', format('pip-nat-spoke-{0}', parameters('suffix')))]"
+              ]
+            },
+            {
+              "condition": "[parameters('usePeering')]",
+              "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+              "apiVersion": "2024-05-01",
+              "name": "[format('{0}/{1}', format('vnet-hub-{0}', parameters('suffix')), 'peer-hub-to-spoke')]",
+              "properties": {
+                "allowForwardedTraffic": true,
+                "allowGatewayTransit": "[parameters('useVpn')]",
+                "allowVirtualNetworkAccess": true,
+                "useRemoteGateways": false,
+                "remoteVirtualNetwork": {
+                  "id": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('spokeRgName')), 'Microsoft.Resources/deployments', 'spoke-vnet'), '2025-04-01').outputs.vnetId.value]"
+                }
+              },
+              "dependsOn": [
+                "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('spokeRgName')), 'Microsoft.Resources/deployments', 'spoke-vnet')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-hub-{0}', parameters('suffix')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones",
+              "apiVersion": "2024-06-01",
+              "name": "privatelink.vaultcore.azure.net",
+              "location": "global",
+              "tags": "[parameters('tags')]"
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+              "apiVersion": "2024-06-01",
+              "name": "[format('{0}/{1}', 'privatelink.vaultcore.azure.net', 'link-hub')]",
+              "location": "global",
+              "properties": {
+                "registrationEnabled": false,
+                "virtualNetwork": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-hub-{0}', parameters('suffix')))]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.vaultcore.azure.net')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-hub-{0}', parameters('suffix')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+              "apiVersion": "2024-06-01",
+              "name": "[format('{0}/{1}', 'privatelink.vaultcore.azure.net', 'link-spoke')]",
+              "location": "global",
+              "properties": {
+                "registrationEnabled": false,
+                "virtualNetwork": {
+                  "id": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('spokeRgName')), 'Microsoft.Resources/deployments', 'spoke-vnet'), '2025-04-01').outputs.vnetId.value]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.vaultcore.azure.net')]",
+                "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('spokeRgName')), 'Microsoft.Resources/deployments', 'spoke-vnet')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2025-04-01",
+              "name": "spoke-vnet",
+              "resourceGroup": "[parameters('spokeRgName')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "suffix": {
+                    "value": "[parameters('suffix')]"
+                  },
+                  "addressSpaceSpoke": {
+                    "value": "[parameters('addressSpaceSpoke')]"
+                  },
+                  "workloadSubnetCidr": {
+                    "value": "[parameters('spokeSubnetWorkload')]"
+                  },
+                  "natGatewayId": "[if(parameters('useNat'), createObject('value', resourceId('Microsoft.Network/natGateways', format('natgw-spoke-{0}', parameters('suffix')))), createObject('value', ''))]",
+                  "tags": {
+                    "value": "[parameters('tags')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.42.1.51946",
+                      "templateHash": "8789450809527827821"
+                    }
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string"
+                    },
+                    "suffix": {
+                      "type": "string"
+                    },
+                    "addressSpaceSpoke": {
+                      "type": "string"
+                    },
+                    "workloadSubnetCidr": {
+                      "type": "string"
+                    },
+                    "natGatewayId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "NAT Gateway resource ID. Pass empty string to skip NAT association."
+                      }
+                    },
+                    "tags": {
+                      "type": "object"
+                    }
+                  },
+                  "variables": {
+                    "useNat": "[not(empty(parameters('natGatewayId')))]"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/virtualNetworks",
+                      "apiVersion": "2024-05-01",
+                      "name": "[format('vnet-spoke-prod-{0}', parameters('suffix'))]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "addressSpace": {
+                          "addressPrefixes": [
+                            "[parameters('addressSpaceSpoke')]"
+                          ]
+                        },
+                        "subnets": [
+                          {
+                            "name": "snet-workload",
+                            "properties": "[union(createObject('addressPrefix', parameters('workloadSubnetCidr')), if(variables('useNat'), createObject('natGateway', createObject('id', parameters('natGatewayId'))), createObject()))]"
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "vnetId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-spoke-prod-{0}', parameters('suffix')))]"
+                    },
+                    "vnetName": {
+                      "type": "string",
+                      "value": "[format('vnet-spoke-prod-{0}', parameters('suffix'))]"
+                    },
+                    "workloadSubnetId": {
+                      "type": "string",
+                      "value": "[format('{0}/subnets/snet-workload', resourceId('Microsoft.Network/virtualNetworks', format('vnet-spoke-prod-{0}', parameters('suffix'))))]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/natGateways', format('natgw-spoke-{0}', parameters('suffix')))]"
+              ]
+            },
+            {
+              "condition": "[parameters('usePeering')]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2025-04-01",
+              "name": "spoke-peering",
+              "resourceGroup": "[parameters('spokeRgName')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "spokeVnetName": {
+                    "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('spokeRgName')), 'Microsoft.Resources/deployments', 'spoke-vnet'), '2025-04-01').outputs.vnetName.value]"
+                  },
+                  "hubVnetId": {
+                    "value": "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-hub-{0}', parameters('suffix')))]"
+                  },
+                  "useVpn": {
+                    "value": "[parameters('useVpn')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.42.1.51946",
+                      "templateHash": "1469520853745483296"
+                    }
+                  },
+                  "parameters": {
+                    "spokeVnetName": {
+                      "type": "string"
+                    },
+                    "hubVnetId": {
+                      "type": "string"
+                    },
+                    "useVpn": {
+                      "type": "bool"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                      "apiVersion": "2024-05-01",
+                      "name": "[format('{0}/{1}', parameters('spokeVnetName'), 'peer-spoke-to-hub')]",
+                      "properties": {
+                        "allowForwardedTraffic": true,
+                        "allowGatewayTransit": false,
+                        "allowVirtualNetworkAccess": true,
+                        "useRemoteGateways": "[parameters('useVpn')]",
+                        "remoteVirtualNetwork": {
+                          "id": "[parameters('hubVnetId')]"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('spokeRgName')), 'Microsoft.Resources/deployments', 'spoke-vnet')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-hub-{0}', parameters('suffix')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "hubVnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', format('vnet-hub-{0}', parameters('suffix')))]"
+            },
+            "hubVnetName": {
+              "type": "string",
+              "value": "[format('vnet-hub-{0}', parameters('suffix'))]"
+            },
+            "afwSubnetId": {
+              "type": "string",
+              "value": "[format('{0}/subnets/AzureFirewallSubnet', resourceId('Microsoft.Network/virtualNetworks', format('vnet-hub-{0}', parameters('suffix'))))]"
+            },
+            "gatewaySubnetId": {
+              "type": "string",
+              "value": "[format('{0}/subnets/GatewaySubnet', resourceId('Microsoft.Network/virtualNetworks', format('vnet-hub-{0}', parameters('suffix'))))]"
+            },
+            "spokeVnetId": {
+              "type": "string",
+              "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('spokeRgName')), 'Microsoft.Resources/deployments', 'spoke-vnet'), '2025-04-01').outputs.vnetId.value]"
+            },
+            "spokeWorkloadSubnetId": {
+              "type": "string",
+              "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('spokeRgName')), 'Microsoft.Resources/deployments', 'spoke-vnet'), '2025-04-01').outputs.workloadSubnetId.value]"
+            },
+            "natGatewayId": {
+              "type": "string",
+              "value": "[if(parameters('useNat'), resourceId('Microsoft.Network/natGateways', format('natgw-spoke-{0}', parameters('suffix'))), '')]"
+            },
+            "keyVaultPdzId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.vaultcore.azure.net')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('rgNames').hub)]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('rgNames').spoke)]"
+      ]
+    },
+    {
+      "condition": "[variables('useFirewall')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "mod-firewall",
+      "resourceGroup": "[variables('rgNames').hub]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "suffix": {
+            "value": "[variables('suffix')]"
+          },
+          "hubVnetName": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-networking'), '2025-04-01').outputs.hubVnetName.value]"
+          },
+          "afwSubnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-networking'), '2025-04-01').outputs.afwSubnetId.value]"
+          },
+          "afwMgmtSubnetCidr": {
+            "value": "[variables('hubSubnetAfwMgmt')]"
+          },
+          "spokeRgName": {
+            "value": "[variables('rgNames').spoke]"
+          },
+          "spokeWorkloadSubnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-networking'), '2025-04-01').outputs.spokeWorkloadSubnetId.value]"
+          },
+          "availabilityZones": {
+            "value": "[variables('availabilityZones')]"
+          },
+          "tags": {
+            "value": "[variables('mergedTags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "10382690128876624854"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "suffix": {
+              "type": "string"
+            },
+            "hubVnetName": {
+              "type": "string"
+            },
+            "afwSubnetId": {
+              "type": "string"
+            },
+            "afwMgmtSubnetCidr": {
+              "type": "string"
+            },
+            "spokeRgName": {
+              "type": "string"
+            },
+            "spokeWorkloadSubnetId": {
+              "type": "string"
+            },
+            "availabilityZones": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "Availability zones for the firewall and its PIPs. Pass [] in regions without AZ support."
+              }
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks/subnets",
+              "apiVersion": "2024-05-01",
+              "name": "[format('{0}/{1}', parameters('hubVnetName'), 'AzureFirewallManagementSubnet')]",
+              "properties": {
+                "addressPrefix": "[parameters('afwMgmtSubnetCidr')]"
+              }
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2024-05-01",
+              "name": "[format('pip-fw-pip1-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "zones": "[parameters('availabilityZones')]",
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              }
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2024-05-01",
+              "name": "[format('pip-fw-pip2-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "zones": "[parameters('availabilityZones')]",
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              }
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2024-05-01",
+              "name": "[format('pip-fw-mgmt-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "zones": "[parameters('availabilityZones')]",
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              }
+            },
+            {
+              "type": "Microsoft.Network/firewallPolicies",
+              "apiVersion": "2024-05-01",
+              "name": "[format('fwpol-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "tier": "Basic"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Network/azureFirewalls",
+              "apiVersion": "2024-05-01",
+              "name": "[format('afw-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "zones": "[parameters('availabilityZones')]",
+              "properties": {
+                "sku": {
+                  "name": "AZFW_VNet",
+                  "tier": "Basic"
+                },
+                "firewallPolicy": {
+                  "id": "[resourceId('Microsoft.Network/firewallPolicies', format('fwpol-{0}', parameters('suffix')))]"
+                },
+                "ipConfigurations": [
+                  {
+                    "name": "ipcfg-primary",
+                    "properties": {
+                      "subnet": {
+                        "id": "[parameters('afwSubnetId')]"
+                      },
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', format('pip-fw-pip1-{0}', parameters('suffix')))]"
+                      }
+                    }
+                  },
+                  {
+                    "name": "ipcfg-secondary",
+                    "properties": {
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', format('pip-fw-pip2-{0}', parameters('suffix')))]"
+                      }
+                    }
+                  }
+                ],
+                "managementIpConfiguration": {
+                  "name": "ipcfg-mgmt",
+                  "properties": {
+                    "subnet": {
+                      "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('hubVnetName'), 'AzureFirewallManagementSubnet')]"
+                    },
+                    "publicIPAddress": {
+                      "id": "[resourceId('Microsoft.Network/publicIPAddresses', format('pip-fw-mgmt-{0}', parameters('suffix')))]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', format('pip-fw-mgmt-{0}', parameters('suffix')))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('hubVnetName'), 'AzureFirewallManagementSubnet')]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', format('pip-fw-pip1-{0}', parameters('suffix')))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', format('pip-fw-pip2-{0}', parameters('suffix')))]",
+                "[resourceId('Microsoft.Network/firewallPolicies', format('fwpol-{0}', parameters('suffix')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2025-04-01",
+              "name": "spoke-route-table",
+              "resourceGroup": "[parameters('spokeRgName')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "suffix": {
+                    "value": "[parameters('suffix')]"
+                  },
+                  "firewallPrivateIp": {
+                    "value": "[reference(resourceId('Microsoft.Network/azureFirewalls', format('afw-{0}', parameters('suffix'))), '2024-05-01').ipConfigurations[0].properties.privateIPAddress]"
+                  },
+                  "workloadSubnetId": {
+                    "value": "[parameters('spokeWorkloadSubnetId')]"
+                  },
+                  "tags": {
+                    "value": "[parameters('tags')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.42.1.51946",
+                      "templateHash": "16402597416871470697"
+                    }
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string"
+                    },
+                    "suffix": {
+                      "type": "string"
+                    },
+                    "firewallPrivateIp": {
+                      "type": "string"
+                    },
+                    "workloadSubnetId": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    }
+                  },
+                  "variables": {
+                    "subnetIdParts": "[split(parameters('workloadSubnetId'), '/')]",
+                    "spokeVnetName": "[variables('subnetIdParts')[8]]",
+                    "spokeSubnetName": "[variables('subnetIdParts')[10]]"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/routeTables",
+                      "apiVersion": "2024-05-01",
+                      "name": "[format('rt-spoke-{0}', parameters('suffix'))]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "properties": {
+                        "routes": [
+                          {
+                            "name": "default-to-firewall",
+                            "properties": {
+                              "addressPrefix": "0.0.0.0/0",
+                              "nextHopType": "VirtualAppliance",
+                              "nextHopIpAddress": "[parameters('firewallPrivateIp')]"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Network/virtualNetworks/subnets",
+                      "apiVersion": "2024-05-01",
+                      "name": "[format('{0}/{1}', variables('spokeVnetName'), variables('spokeSubnetName'))]",
+                      "properties": {
+                        "addressPrefix": "[reference(resourceId('Microsoft.Network/virtualNetworks/subnets', variables('spokeVnetName'), variables('spokeSubnetName')), '2024-05-01').addressPrefix]",
+                        "natGateway": "[tryGet(reference(resourceId('Microsoft.Network/virtualNetworks/subnets', variables('spokeVnetName'), variables('spokeSubnetName')), '2024-05-01'), 'natGateway')]",
+                        "routeTable": {
+                          "id": "[resourceId('Microsoft.Network/routeTables', format('rt-spoke-{0}', parameters('suffix')))]"
+                        }
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Network/routeTables', format('rt-spoke-{0}', parameters('suffix')))]"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/azureFirewalls', format('afw-{0}', parameters('suffix')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "firewallPrivateIp": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/azureFirewalls', format('afw-{0}', parameters('suffix'))), '2024-05-01').ipConfigurations[0].properties.privateIPAddress]"
+            },
+            "firewallId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/azureFirewalls', format('afw-{0}', parameters('suffix')))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-networking')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('rgNames').hub)]"
+      ]
+    },
+    {
+      "condition": "[variables('useVpn')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "mod-vpn",
+      "resourceGroup": "[variables('rgNames').hub]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "suffix": {
+            "value": "[variables('suffix')]"
+          },
+          "gatewaySubnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-networking'), '2025-04-01').outputs.gatewaySubnetId.value]"
+          },
+          "availabilityZones": {
+            "value": "[variables('availabilityZones')]"
+          },
+          "tags": {
+            "value": "[variables('mergedTags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "13105331786222637914"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "suffix": {
+              "type": "string"
+            },
+            "gatewaySubnetId": {
+              "type": "string"
+            },
+            "availabilityZones": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "Availability zones for the VPN gateway PIP. Pass [] in regions without AZ support. The gateway SKU itself remains *AZ regardless (Azure requirement as of May 2026)."
+              }
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2024-05-01",
+              "name": "[format('pip-vpngw-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "zones": "[parameters('availabilityZones')]",
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              }
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworkGateways",
+              "apiVersion": "2024-05-01",
+              "name": "[format('vpngw-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "gatewayType": "Vpn",
+                "vpnType": "RouteBased",
+                "activeActive": false,
+                "enableBgp": false,
+                "sku": {
+                  "name": "VpnGw2AZ",
+                  "tier": "VpnGw2AZ"
+                },
+                "vpnGatewayGeneration": "Generation2",
+                "ipConfigurations": [
+                  {
+                    "name": "vnetGatewayConfig",
+                    "properties": {
+                      "privateIPAllocationMethod": "Dynamic",
+                      "subnet": {
+                        "id": "[parameters('gatewaySubnetId')]"
+                      },
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', format('pip-vpngw-{0}', parameters('suffix')))]"
+                      }
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', format('pip-vpngw-{0}', parameters('suffix')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "vpnGatewayId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworkGateways', format('vpngw-{0}', parameters('suffix')))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-networking')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('rgNames').hub)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "mod-security",
+      "resourceGroup": "[variables('rgNames').security]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "suffix": {
+            "value": "[variables('suffix')]"
+          },
+          "spokeWorkloadSubnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-networking'), '2025-04-01').outputs.spokeWorkloadSubnetId.value]"
+          },
+          "keyVaultPdzId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-networking'), '2025-04-01').outputs.keyVaultPdzId.value]"
+          },
+          "tags": {
+            "value": "[variables('mergedTags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "14541135639784244713"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "suffix": {
+              "type": "string"
+            },
+            "spokeWorkloadSubnetId": {
+              "type": "string"
+            },
+            "keyVaultPdzId": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "kvSuffix": "[take(uniqueString(resourceGroup().id, parameters('suffix')), 5)]",
+            "kvName": "[format('kv-{0}-{1}', parameters('suffix'), variables('kvSuffix'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults",
+              "apiVersion": "2024-11-01",
+              "name": "[variables('kvName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "tenantId": "[subscription().tenantId]",
+                "sku": {
+                  "family": "A",
+                  "name": "standard"
+                },
+                "enableRbacAuthorization": true,
+                "enablePurgeProtection": true,
+                "softDeleteRetentionInDays": 7,
+                "publicNetworkAccess": "Disabled",
+                "networkAcls": {
+                  "bypass": "AzureServices",
+                  "defaultAction": "Deny"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateEndpoints",
+              "apiVersion": "2024-05-01",
+              "name": "[format('pe-kv-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "subnet": {
+                  "id": "[parameters('spokeWorkloadSubnetId')]"
+                },
+                "privateLinkServiceConnections": [
+                  {
+                    "name": "plsc-kv",
+                    "properties": {
+                      "privateLinkServiceId": "[resourceId('Microsoft.KeyVault/vaults', variables('kvName'))]",
+                      "groupIds": [
+                        "vault"
+                      ]
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('kvName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+              "apiVersion": "2024-05-01",
+              "name": "[format('{0}/{1}', format('pe-kv-{0}', parameters('suffix')), 'default')]",
+              "properties": {
+                "privateDnsZoneConfigs": [
+                  {
+                    "name": "kv",
+                    "properties": {
+                      "privateDnsZoneId": "[parameters('keyVaultPdzId')]"
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', format('pe-kv-{0}', parameters('suffix')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "keyVaultId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.KeyVault/vaults', variables('kvName'))]"
+            },
+            "keyVaultUri": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('kvName')), '2024-11-01').vaultUri]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-networking')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('rgNames').security)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "mod-monitoring",
+      "resourceGroup": "[variables('rgNames').monitor]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "suffix": {
+            "value": "[variables('suffix')]"
+          },
+          "logRetentionDays": {
+            "value": "[parameters('logRetentionDays')]"
+          },
+          "tags": {
+            "value": "[variables('mergedTags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "17021600668630398747"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "suffix": {
+              "type": "string"
+            },
+            "logRetentionDays": {
+              "type": "int"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2025-02-01",
+              "name": "[format('log-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": "[parameters('logRetentionDays')]",
+                "workspaceCapping": {
+                  "dailyQuotaGb": "[json('0.5')]"
+                },
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+              }
+            },
+            {
+              "type": "Microsoft.Automation/automationAccounts",
+              "apiVersion": "2023-11-01",
+              "name": "[format('aa-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "name": "Basic"
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "workspaceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', format('log-{0}', parameters('suffix')))]"
+            },
+            "automationAccountId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Automation/automationAccounts', format('aa-{0}', parameters('suffix')))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('rgNames').monitor)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "mod-backup",
+      "resourceGroup": "[variables('rgNames').backup]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "suffix": {
+            "value": "[variables('suffix')]"
+          },
+          "tags": {
+            "value": "[variables('mergedTags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "4650669757299052250"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "suffix": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.RecoveryServices/vaults",
+              "apiVersion": "2024-10-01",
+              "name": "[format('rsv-{0}', parameters('suffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard",
+                "tier": "Standard"
+              },
+              "properties": {}
+            },
+            {
+              "type": "Microsoft.RecoveryServices/vaults/backupconfig",
+              "apiVersion": "2024-10-01",
+              "name": "[format('{0}/{1}', format('rsv-{0}', parameters('suffix')), 'vaultconfig')]",
+              "properties": {
+                "enhancedSecurityState": "Enabled",
+                "softDeleteFeatureState": "Enabled",
+                "storageType": "GeoRedundant",
+                "storageTypeState": "Locked"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.RecoveryServices/vaults', format('rsv-{0}', parameters('suffix')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "vaultId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.RecoveryServices/vaults', format('rsv-{0}', parameters('suffix')))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('rgNames').backup)]"
+      ]
+    },
+    {
+      "condition": "[parameters('budgetEnabled')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "mod-budgets",
+      "location": "[deployment().location]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "suffix": {
+            "value": "[variables('suffix')]"
+          },
+          "amount": {
+            "value": "[parameters('budgetAmount')]"
+          },
+          "thresholds": {
+            "value": "[parameters('budgetThresholds')]"
+          },
+          "alertEmails": {
+            "value": "[parameters('budgetAlertEmails')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "16837017827990115690"
+            }
+          },
+          "parameters": {
+            "suffix": {
+              "type": "string",
+              "metadata": {
+                "description": "Short suffix used in the budget name (e.g. contoso-wcus)."
+              }
+            },
+            "amount": {
+              "type": "int",
+              "defaultValue": 100,
+              "minValue": 1,
+              "metadata": {
+                "description": "Monthly budget amount in the subscription billing currency."
+              }
+            },
+            "thresholds": {
+              "type": "array",
+              "defaultValue": [
+                50,
+                80,
+                100
+              ],
+              "metadata": {
+                "description": "Percent-of-budget thresholds for Actual-spend alerts."
+              }
+            },
+            "alertEmails": {
+              "type": "array",
+              "minLength": 1,
+              "metadata": {
+                "description": "Email recipients for budget alerts. At least one required."
+              }
+            },
+            "resourceGroupNames": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "Optional list of resource group names to scope the budget to. Empty => entire subscription."
+              }
+            },
+            "startDate": {
+              "type": "string",
+              "defaultValue": "[format('{0}-01T00:00:00Z', utcNow('yyyy-MM'))]",
+              "metadata": {
+                "description": "First-of-month start date for the budget time period (YYYY-MM-DDT00:00:00Z)."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Consumption/budgets",
+              "apiVersion": "2023-11-01",
+              "name": "[format('budget-{0}', parameters('suffix'))]",
+              "properties": {
+                "amount": "[parameters('amount')]",
+                "timeGrain": "Monthly",
+                "timePeriod": {
+                  "startDate": "[parameters('startDate')]"
+                },
+                "category": "Cost",
+                "filter": "[if(empty(parameters('resourceGroupNames')), null(), createObject('dimensions', createObject('name', 'ResourceGroupName', 'operator', 'In', 'values', parameters('resourceGroupNames'))))]",
+                "notifications": "[union(toObject(parameters('thresholds'), lambda('t', format('Actual_GreaterThan_{0}_Percent', lambdaVariables('t'))), lambda('t', createObject('enabled', true(), 'operator', 'GreaterThan', 'threshold', lambdaVariables('t'), 'thresholdType', 'Actual', 'contactEmails', parameters('alertEmails')))), createObject('Forecasted_GreaterThan_100_Percent', createObject('enabled', true(), 'operator', 'GreaterThan', 'threshold', 100, 'thresholdType', 'Forecasted', 'contactEmails', parameters('alertEmails'))))]"
+              }
+            }
+          ],
+          "outputs": {
+            "budgetId": {
+              "type": "string",
+              "value": "[subscriptionResourceId('Microsoft.Consumption/budgets', format('budget-{0}', parameters('suffix')))]"
+            },
+            "budgetName": {
+              "type": "string",
+              "value": "[format('budget-{0}', parameters('suffix'))]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "scenarioOut": {
+      "type": "string",
+      "value": "[parameters('scenario')]"
+    },
+    "resourceGroupNames": {
+      "type": "object",
+      "value": "[variables('rgNames')]"
+    },
+    "hubVnetId": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-networking'), '2025-04-01').outputs.hubVnetId.value]"
+    },
+    "spokeVnetId": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-networking'), '2025-04-01').outputs.spokeVnetId.value]"
+    },
+    "keyVaultUri": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').security), 'Microsoft.Resources/deployments', 'mod-security'), '2025-04-01').outputs.keyVaultUri.value]"
+    },
+    "logAnalyticsWorkspaceId": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').monitor), 'Microsoft.Resources/deployments', 'mod-monitoring'), '2025-04-01').outputs.workspaceId.value]"
+    },
+    "firewallPrivateIp": {
+      "type": "string",
+      "value": "[if(variables('useFirewall'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-firewall'), '2025-04-01').outputs.firewallPrivateIp.value, '')]"
+    },
+    "vpnGatewayId": {
+      "type": "string",
+      "value": "[if(variables('useVpn'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-vpn'), '2025-04-01').outputs.vpnGatewayId.value, '')]"
+    },
+    "natGatewayId": {
+      "type": "string",
+      "value": "[if(variables('useNat'), reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNames').hub), 'Microsoft.Resources/deployments', 'mod-networking'), '2025-04-01').outputs.natGatewayId.value, '')]"
+    },
+    "budgetId": {
+      "type": "string",
+      "value": "[if(parameters('budgetEnabled'), reference(subscriptionResourceId('Microsoft.Resources/deployments', 'mod-budgets'), '2025-04-01').outputs.budgetId.value, '')]"
+    }
+  }
+}

@@ -52,6 +52,25 @@ param tags object = {
   cost_center: 'platform'
 }
 
+// --- Optional: subscription budget -----------------------------------------
+
+@description('Enable a subscription-scoped monthly budget with email alerts. Free.')
+param budgetEnabled bool = false
+
+@description('Monthly budget amount (USD or subscription billing currency).')
+@minValue(1)
+param budgetAmount int = 100
+
+@description('Percent-of-budget thresholds for Actual-spend alerts.')
+param budgetThresholds array = [
+  50
+  80
+  100
+]
+
+@description('Email recipients for budget alerts. Required when budgetEnabled = true.')
+param budgetAlertEmails array = []
+
 // ---------------------------------------------------------------------------
 // Variables
 // ---------------------------------------------------------------------------
@@ -265,6 +284,20 @@ module backupVault 'modules/recovery.bicep' = {
 }
 
 // ---------------------------------------------------------------------------
+// Budgets (optional)
+// ---------------------------------------------------------------------------
+
+module budgets 'modules/budgets.bicep' = if (budgetEnabled) {
+  name: 'mod-budgets'
+  params: {
+    suffix: suffix
+    amount: budgetAmount
+    thresholds: budgetThresholds
+    alertEmails: budgetAlertEmails
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Outputs
 // ---------------------------------------------------------------------------
 
@@ -277,3 +310,4 @@ output logAnalyticsWorkspaceId string = monitoring.outputs.workspaceId
 output firewallPrivateIp string = useFirewall ? firewall!.outputs.firewallPrivateIp : ''
 output vpnGatewayId string = useVpn ? vpn!.outputs.vpnGatewayId : ''
 output natGatewayId string = useNat ? networking.outputs.natGatewayId : ''
+output budgetId string = budgetEnabled ? budgets!.outputs.budgetId : ''

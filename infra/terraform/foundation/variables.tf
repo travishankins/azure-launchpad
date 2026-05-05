@@ -75,3 +75,49 @@ variable "tags" {
     cost_center = "platform"
   }
 }
+
+###############################################################################
+# Budgets (optional, opt-in)
+###############################################################################
+
+variable "budget_enabled" {
+  description = "If true, deploy a subscription-scoped monthly budget with email alerts. Free."
+  type        = bool
+  default     = false
+}
+
+variable "budget_amount" {
+  description = "Monthly budget amount in the subscription's billing currency (typically USD)."
+  type        = number
+  default     = 100
+  validation {
+    condition     = var.budget_amount > 0
+    error_message = "budget_amount must be greater than 0."
+  }
+}
+
+variable "budget_thresholds" {
+  description = "Percent-of-budget thresholds at which to send Actual-spend notifications. Forecasted 100% is always sent."
+  type        = list(number)
+  default     = [50, 80, 100]
+  validation {
+    condition     = alltrue([for t in var.budget_thresholds : t > 0 && t <= 1000])
+    error_message = "All budget_thresholds must be between 1 and 1000 (percent)."
+  }
+}
+
+variable "budget_alert_emails" {
+  description = "Email recipients for budget alerts. Required when budget_enabled = true."
+  type        = list(string)
+  default     = []
+  validation {
+    condition     = alltrue([for e in var.budget_alert_emails : can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", e))])
+    error_message = "All budget_alert_emails entries must look like a valid email address."
+  }
+}
+
+variable "budget_resource_group_names" {
+  description = "Optional list of resource group names to scope the budget to. Empty => entire subscription."
+  type        = list(string)
+  default     = []
+}

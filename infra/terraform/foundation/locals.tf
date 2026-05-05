@@ -10,6 +10,11 @@ locals {
     local.use_vpn && length(var.on_premises_address_space) == 0
   ) ? tobool("ERROR: on_premises_address_space must be provided for vpn/full scenarios.") : true
 
+  # Budget validation: enabling budgets requires at least one alert email.
+  _validate_budget_emails = (
+    var.budget_enabled && length(var.budget_alert_emails) == 0
+  ) ? tobool("ERROR: budget_alert_emails must contain at least one address when budget_enabled = true.") : true
+
   # Naming
   suffix = "${var.name_prefix}-${var.region_short}"
 

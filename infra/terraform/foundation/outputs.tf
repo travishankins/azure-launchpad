@@ -44,3 +44,8 @@ output "nat_gateway_id" {
   description = "NAT Gateway resource ID (null when scenario does not include NAT)."
   value       = local.use_nat ? azurerm_nat_gateway.spoke[0].id : null
 }
+
+output "budget_id" {
+  description = "Subscription budget resource ID (null when budgets are disabled)."
+  value       = var.budget_enabled ? azurerm_consumption_budget_subscription.this[0].id : null
+}

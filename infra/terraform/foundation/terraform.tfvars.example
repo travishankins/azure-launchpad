@@ -16,3 +16,10 @@ scenario        = "baseline"
 #   iac         = "terraform"
 #   cost_center = "platform"
 # }
+
+# Optional: monthly budget + email alerts (free)
+# budget_enabled               = true
+# budget_amount                = 200
+# budget_alert_emails          = ["platform@example.com", "finance@example.com"]
+# budget_thresholds            = [50, 80, 100]
+# budget_resource_group_names  = []  # default: whole subscription

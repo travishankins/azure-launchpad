@@ -48,6 +48,7 @@ export default defineConfig({
           items: [
             { label: 'Management Groups', link: '/governance/management-groups/' },
             { label: 'Policy catalog', link: '/governance/policy-catalog/' },
+            { label: 'Budgets', link: '/governance/budgets/' },
           ],
         },
         {
