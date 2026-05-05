@@ -4,10 +4,11 @@
 # wire them up once customer on-prem peer + PSK are known.
 ###############################################################################
 resource "azurerm_public_ip" "vpn" {
-  count = local.use_vpn ? 1 : 0
+  count    = local.use_vpn ? 1 : 0
+  provider = azurerm.connectivity
 
   name                = "pip-vpngw-${local.suffix}"
-  resource_group_name = azurerm_resource_group.this["hub"].name
+  resource_group_name = local.rg["hub"].name
   location            = var.location
   allocation_method   = "Static"
   sku                 = "Standard"
@@ -16,10 +17,11 @@ resource "azurerm_public_ip" "vpn" {
 }
 
 resource "azurerm_virtual_network_gateway" "vpn" {
-  count = local.use_vpn ? 1 : 0
+  count    = local.use_vpn ? 1 : 0
+  provider = azurerm.connectivity
 
   name                = "vpngw-${local.suffix}"
-  resource_group_name = azurerm_resource_group.this["hub"].name
+  resource_group_name = local.rg["hub"].name
   location            = var.location
 
   type     = "Vpn"

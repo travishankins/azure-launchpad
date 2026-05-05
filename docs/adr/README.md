@@ -6,13 +6,14 @@ Format: lightweight [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/d
 
 ## Index
 
-| #   | Title                                                 | Status   |
-| --- | ----------------------------------------------------- | -------- |
-| 0001 | [Scenarios as Terraform workspaces](0001-scenarios-as-workspaces.md) | Accepted |
-| 0002 | [Pin Azure Verified Modules to exact versions](0002-pin-avm-versions.md) | Accepted |
-| 0003 | [Azure Firewall Basic as the default SKU](0003-firewall-basic-default.md) | Accepted |
-| 0004 | [Management Groups are an opt-in second module](0004-management-groups-opt-in.md) | Accepted |
+| #    | Title                                                                                 | Status   |
+| ---- | ------------------------------------------------------------------------------------- | -------- |
+| 0001 | [Scenarios as Terraform workspaces](0001-scenarios-as-workspaces.md)                  | Accepted |
+| 0002 | [Pin Azure Verified Modules to exact versions](0002-pin-avm-versions.md)              | Accepted |
+| 0003 | [Azure Firewall Basic as the default SKU](0003-firewall-basic-default.md)             | Accepted |
+| 0004 | [Management Groups are an opt-in second module](0004-management-groups-opt-in.md)     | Accepted |
 | 0005 | [Astro `base: '/azure-launchpad/'` for GitHub Pages hosting](0005-astro-base-path.md) | Accepted |
+| 0006 | [Multi-subscription deployment mode](0006-multi-subscription-mode.md)                 | Accepted |
 
 ## When to add a new ADR
 
@@ -33,14 +34,18 @@ Do **not** add ADRs for ephemeral fixes, code-style tweaks, or anything reversib
 - **Date**: YYYY-MM-DD
 
 ## Context
+
 What forces / constraints / facts shape this decision?
 
 ## Decision
+
 What we chose. Be specific.
 
 ## Consequences
+
 Positive, negative, and follow-on work this implies.
 
 ## Alternatives considered
+
 Brief — one paragraph each — with why we passed.
 ```

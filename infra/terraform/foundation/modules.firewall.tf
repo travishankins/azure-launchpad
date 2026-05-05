@@ -4,9 +4,10 @@
 ###############################################################################
 resource "azurerm_public_ip" "fw" {
   for_each = local.use_firewall ? toset(["pip1", "pip2"]) : toset([])
+  provider = azurerm.connectivity
 
   name                = "pip-fw-${each.key}-${local.suffix}"
-  resource_group_name = azurerm_resource_group.this["hub"].name
+  resource_group_name = local.rg["hub"].name
   location            = var.location
   allocation_method   = "Static"
   sku                 = "Standard"
@@ -16,10 +17,11 @@ resource "azurerm_public_ip" "fw" {
 
 # Firewall Basic requires a management subnet + management PIP.
 resource "azurerm_subnet" "fw_mgmt" {
-  count = local.use_firewall ? 1 : 0
+  count    = local.use_firewall ? 1 : 0
+  provider = azurerm.connectivity
 
   name                 = "AzureFirewallManagementSubnet"
-  resource_group_name  = azurerm_resource_group.this["hub"].name
+  resource_group_name  = local.rg["hub"].name
   virtual_network_name = module.vnet_hub.name
   address_prefixes     = [local.hub_firewall_mgmt_cidr]
 
@@ -27,10 +29,11 @@ resource "azurerm_subnet" "fw_mgmt" {
 }
 
 resource "azurerm_public_ip" "fw_mgmt" {
-  count = local.use_firewall ? 1 : 0
+  count    = local.use_firewall ? 1 : 0
+  provider = azurerm.connectivity
 
   name                = "pip-fw-mgmt-${local.suffix}"
-  resource_group_name = azurerm_resource_group.this["hub"].name
+  resource_group_name = local.rg["hub"].name
   location            = var.location
   allocation_method   = "Static"
   sku                 = "Standard"
@@ -39,20 +42,22 @@ resource "azurerm_public_ip" "fw_mgmt" {
 }
 
 resource "azurerm_firewall_policy" "this" {
-  count = local.use_firewall ? 1 : 0
+  count    = local.use_firewall ? 1 : 0
+  provider = azurerm.connectivity
 
   name                = "fwpol-${local.suffix}"
-  resource_group_name = azurerm_resource_group.this["hub"].name
+  resource_group_name = local.rg["hub"].name
   location            = var.location
   sku                 = "Basic"
   tags                = local.tags
 }
 
 resource "azurerm_firewall" "this" {
-  count = local.use_firewall ? 1 : 0
+  count    = local.use_firewall ? 1 : 0
+  provider = azurerm.connectivity
 
   name                = "afw-${local.suffix}"
-  resource_group_name = azurerm_resource_group.this["hub"].name
+  resource_group_name = local.rg["hub"].name
   location            = var.location
   sku_name            = "AZFW_VNet"
   sku_tier            = "Basic"
@@ -83,10 +88,11 @@ resource "azurerm_firewall" "this" {
 # Spoke route table — force 0.0.0.0/0 through the firewall
 ###############################################################################
 resource "azurerm_route_table" "spoke" {
-  count = local.use_firewall ? 1 : 0
+  count    = local.use_firewall ? 1 : 0
+  provider = azurerm.landingzone
 
   name                = "rt-spoke-${local.suffix}"
-  resource_group_name = azurerm_resource_group.this["spoke"].name
+  resource_group_name = local.rg["spoke"].name
   location            = var.location
   tags                = local.tags
 
@@ -99,7 +105,8 @@ resource "azurerm_route_table" "spoke" {
 }
 
 resource "azurerm_subnet_route_table_association" "spoke_workload" {
-  count = local.use_firewall ? 1 : 0
+  count    = local.use_firewall ? 1 : 0
+  provider = azurerm.landingzone
 
   subnet_id      = module.vnet_spoke.subnets["workload"].resource_id
   route_table_id = azurerm_route_table.spoke[0].id

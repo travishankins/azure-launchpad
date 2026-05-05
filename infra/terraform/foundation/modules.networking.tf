@@ -5,8 +5,12 @@ module "vnet_hub" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
   version = "0.17.1"
 
+  providers = {
+    azurerm = azurerm.connectivity
+  }
+
   name          = local.vnet_hub_name
-  parent_id     = azurerm_resource_group.this["hub"].id
+  parent_id     = local.rg["hub"].id
   location      = var.location
   address_space = [var.address_space_hub]
   tags          = local.tags
@@ -34,8 +38,12 @@ module "vnet_spoke" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
   version = "0.17.1"
 
+  providers = {
+    azurerm = azurerm.landingzone
+  }
+
   name          = local.vnet_spoke_name
-  parent_id     = azurerm_resource_group.this["spoke"].id
+  parent_id     = local.rg["spoke"].id
   location      = var.location
   address_space = [var.address_space_spoke]
   tags          = local.tags
@@ -55,10 +63,11 @@ module "vnet_spoke" {
 # NAT Gateway (baseline + vpn scenarios)
 ###############################################################################
 resource "azurerm_public_ip" "nat" {
-  count = local.use_nat ? 1 : 0
+  count    = local.use_nat ? 1 : 0
+  provider = azurerm.landingzone
 
   name                = "pip-nat-spoke-${local.suffix}"
-  resource_group_name = azurerm_resource_group.this["spoke"].name
+  resource_group_name = local.rg["spoke"].name
   location            = var.location
   allocation_method   = "Static"
   sku                 = "Standard"
@@ -67,10 +76,11 @@ resource "azurerm_public_ip" "nat" {
 }
 
 resource "azurerm_nat_gateway" "spoke" {
-  count = local.use_nat ? 1 : 0
+  count    = local.use_nat ? 1 : 0
+  provider = azurerm.landingzone
 
   name                    = "natgw-spoke-${local.suffix}"
-  resource_group_name     = azurerm_resource_group.this["spoke"].name
+  resource_group_name     = local.rg["spoke"].name
   location                = var.location
   sku_name                = "Standard"
   idle_timeout_in_minutes = 4
@@ -78,7 +88,8 @@ resource "azurerm_nat_gateway" "spoke" {
 }
 
 resource "azurerm_nat_gateway_public_ip_association" "spoke" {
-  count = local.use_nat ? 1 : 0
+  count    = local.use_nat ? 1 : 0
+  provider = azurerm.landingzone
 
   nat_gateway_id       = azurerm_nat_gateway.spoke[0].id
   public_ip_address_id = azurerm_public_ip.nat[0].id
@@ -88,10 +99,11 @@ resource "azurerm_nat_gateway_public_ip_association" "spoke" {
 # Hub <-> Spoke peering (firewall, vpn, full)
 ###############################################################################
 resource "azurerm_virtual_network_peering" "hub_to_spoke" {
-  count = local.use_peering ? 1 : 0
+  count    = local.use_peering ? 1 : 0
+  provider = azurerm.connectivity
 
   name                         = "peer-hub-to-spoke"
-  resource_group_name          = azurerm_resource_group.this["hub"].name
+  resource_group_name          = local.rg["hub"].name
   virtual_network_name         = module.vnet_hub.name
   remote_virtual_network_id    = module.vnet_spoke.resource_id
   allow_forwarded_traffic      = true
@@ -101,10 +113,11 @@ resource "azurerm_virtual_network_peering" "hub_to_spoke" {
 }
 
 resource "azurerm_virtual_network_peering" "spoke_to_hub" {
-  count = local.use_peering ? 1 : 0
+  count    = local.use_peering ? 1 : 0
+  provider = azurerm.landingzone
 
   name                         = "peer-spoke-to-hub"
-  resource_group_name          = azurerm_resource_group.this["spoke"].name
+  resource_group_name          = local.rg["spoke"].name
   virtual_network_name         = module.vnet_spoke.name
   remote_virtual_network_id    = module.vnet_hub.resource_id
   allow_forwarded_traffic      = true
@@ -123,8 +136,12 @@ module "pdz_keyvault" {
   source  = "Azure/avm-res-network-privatednszone/azurerm"
   version = "0.5.0"
 
+  providers = {
+    azurerm = azurerm.connectivity
+  }
+
   domain_name = "privatelink.vaultcore.azure.net"
-  parent_id   = azurerm_resource_group.this["hub"].id
+  parent_id   = local.rg["hub"].id
   tags        = local.tags
 
   virtual_network_links = {

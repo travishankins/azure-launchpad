@@ -14,8 +14,9 @@
 
 resource "azurerm_consumption_budget_subscription" "this" {
   count           = var.budget_enabled ? 1 : 0
+  provider        = azurerm.management
   name            = "budget-${local.suffix}"
-  subscription_id = "/subscriptions/${var.subscription_id}"
+  subscription_id = "/subscriptions/${local.sub_management}"
   amount          = var.budget_amount
   time_grain      = "Monthly"
 

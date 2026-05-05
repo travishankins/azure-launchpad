@@ -8,8 +8,8 @@ const QUESTIONS = [
     help: 'Both options deploy the same Azure architecture (identical resource groups, networking, security, monitoring) — pick the one your team already knows.',
     impact: {
       bullets: [
-        ['Terraform: ', 'HashiCorp HCL + Azure provider, state stored in Azure Storage.'],
-        ['Bicep: ', 'native ARM-based, deployment history stored in Azure.'],
+        ['Terraform: ', 'HCL + Azure provider, state stored in Azure Storage. Multi-subscription mode supports all four scenarios.'],
+        ['Bicep: ', 'native ARM-based, deployment history stored in Azure. Multi-subscription mode is baseline-only in v1.'],
       ],
       note: 'The wizard will tailor the rest of the questions and emit the right files + commands for your choice.',
     },
@@ -17,6 +17,17 @@ const QUESTIONS = [
     options: [
       { value: 'terraform', label: 'Terraform — HCL + AzureRM provider, AVM modules, remote state.' },
       { value: 'bicep', label: 'Bicep — Microsoft’s native DSL, deployments tracked in Azure itself.' },
+    ],
+  },
+  {
+    id: 'deployment_mode',
+    label: 'Single subscription or ALZ-aligned multi-subscription split?',
+    help: 'Single = everything (hub, spoke, monitoring, KV) lands in one subscription. Multi = ALZ-aligned split across three subscriptions: Connectivity (hub VNet, firewall, VPN), Management (Log Analytics, RSV, automation), Landing-Zone (spoke VNet, KV, workloads). Multi requires Contributor on each sub.',
+    impact: 'Single: simplest, most SMB-friendly, no cross-sub RBAC. Multi: matches Microsoft ALZ, separates platform from workloads, but needs 3 subscriptions and cross-sub Network Contributor for peering. Bicep multi-sub is baseline-only in v1; Terraform multi-sub supports all four scenarios.',
+    type: 'radio',
+    options: [
+      { value: 'single', label: 'Single subscription — everything in one sub. Default for SMB.' },
+      { value: 'multi', label: 'Multi-subscription (ALZ split) — Connectivity / Management / Landing-Zone subs.' },
     ],
   },
   {
@@ -43,9 +54,39 @@ const QUESTIONS = [
   },
   {
     id: 'subscription_id',
-    label: 'Target Azure subscription ID',
-    help: 'The single subscription the foundation deploys into. The OIDC service principal used by CI must have Contributor here. Find with: az account show --query id -o tsv',
+    label: 'Target Azure subscription ID (single-sub mode)',
+    help: 'Single subscription that hosts everything. The OIDC service principal used by CI must have Contributor here. Find with: az account show --query id -o tsv',
     impact: 'Used as the home subscription for the azurerm provider. All 6 resource groups (rg-net-hub, rg-net-spoke, rg-security, rg-monitoring, rg-automation, rg-recovery) land here.',
+    type: 'text',
+    placeholder: '00000000-0000-0000-0000-000000000000',
+    pattern: /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+    error: 'Must be a valid GUID.',
+  },
+  {
+    id: 'connectivity_subscription_id',
+    label: 'Connectivity subscription ID',
+    help: 'Hosts hub VNet, Azure Firewall (if used), VPN Gateway (if used), Private DNS zones. Principal needs Contributor here.',
+    impact: 'Lands rg-hub. In ALZ this is typically the platform-connectivity sub.',
+    type: 'text',
+    placeholder: '00000000-0000-0000-0000-000000000000',
+    pattern: /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+    error: 'Must be a valid GUID.',
+  },
+  {
+    id: 'management_subscription_id',
+    label: 'Management subscription ID',
+    help: 'Hosts Log Analytics workspace, Automation Account, Recovery Services Vault, Foundation Health workbook, subscription budget. Principal needs Contributor here.',
+    impact: 'Lands rg-monitor + rg-backup. In ALZ this is typically the platform-management sub.',
+    type: 'text',
+    placeholder: '00000000-0000-0000-0000-000000000000',
+    pattern: /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+    error: 'Must be a valid GUID.',
+  },
+  {
+    id: 'landingzone_subscription_id',
+    label: 'Landing-zone subscription ID',
+    help: 'Hosts spoke VNet, Key Vault (with private endpoint), workload RGs. Principal needs Contributor here AND Network Contributor on the hub VNet in the connectivity sub for cross-sub peering.',
+    impact: 'Lands rg-spoke-prod + rg-security + rg-migrate. In ALZ this is a landingzones/corp or landingzones/online sub.',
     type: 'text',
     placeholder: '00000000-0000-0000-0000-000000000000',
     pattern: /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
@@ -201,6 +242,10 @@ const QUESTIONS = [
 
 // Steps that should be skipped depending on prior answers.
 function isStepSkipped(qid, answers) {
+  if (qid === 'subscription_id') return answers.deployment_mode === 'multi';
+  if (qid === 'connectivity_subscription_id' || qid === 'management_subscription_id' || qid === 'landingzone_subscription_id') {
+    return answers.deployment_mode !== 'multi';
+  }
   if (qid === 'on_prem_cidrs') return answers.hybrid !== 'yes';
   if (qid === 'tenant_id' || qid === 'mg_optional' || qid === 'mg_policies') return answers.mg_enable !== 'yes';
   if (qid === 'log_retention_days' || qid === 'budget_amount' || qid === 'budget_alert_emails' || qid === 'workbook_enabled') {
@@ -231,13 +276,22 @@ const SCENARIO_META = {
 
 function buildTfvars(answers) {
   const scenario = deriveScenario(answers);
+  const isMulti = answers.deployment_mode === 'multi';
   const lines = [
     `# Generated by the Azure Launchpad (SMB / SMEC Edition) wizard`,
-    `subscription_id = "${answers.subscription_id}"`,
+    `subscription_id = "${isMulti ? answers.connectivity_subscription_id : answers.subscription_id}"  # default / fallback`,
     `scenario        = "${scenario}"`,
     `location        = "${answers.location}"`,
     `name_prefix     = "${answers.name_prefix}"`,
   ];
+  if (isMulti) {
+    lines.push('');
+    lines.push('# ALZ-aligned multi-subscription split');
+    lines.push(`deployment_mode              = "multi"`);
+    lines.push(`connectivity_subscription_id = "${answers.connectivity_subscription_id}"`);
+    lines.push(`management_subscription_id   = "${answers.management_subscription_id}"`);
+    lines.push(`landingzone_subscription_id  = "${answers.landingzone_subscription_id}"`);
+  }
   if (scenario === 'vpn' || scenario === 'full') {
     const cidrs = (answers.on_prem_cidrs || '')
       .split(',')
@@ -314,8 +368,10 @@ function buildBicepParams(answers) {
 
 function buildCommands(answers) {
   const scenario = deriveScenario(answers);
-  return `# 1. One-time: create the Azure Storage backend for Terraform state
-export ARM_SUBSCRIPTION_ID=${answers.subscription_id}
+  const isMulti = answers.deployment_mode === 'multi';
+  const bootstrapSub = isMulti ? answers.management_subscription_id : answers.subscription_id;
+  return `# 1. One-time: create the Azure Storage backend for Terraform state${isMulti ? `\n#    (multi-sub mode: state lives in the MANAGEMENT sub)` : ''}
+export ARM_SUBSCRIPTION_ID=${bootstrapSub}
 ./scripts/bootstrap-state.sh
 # (note the storage_account_name printed at the end)
 
@@ -326,10 +382,10 @@ terraform init \\
   -backend-config="resource_group_name=rg-tfstate-${answers.name_prefix}-${shortRegion(answers.location)}" \\
   -backend-config="storage_account_name=<from-bootstrap>" \\
   -backend-config="container_name=tfstate" \\
-  -backend-config="key=foundation.${scenario}.tfstate"
+  -backend-config="key=foundation.${scenario}${isMulti ? '.multi' : ''}.tfstate"
 
 # 3. Workspace per scenario
-terraform workspace select -or-create ${scenario}
+terraform workspace select -or-create ${scenario}${isMulti ? '-multi' : ''}
 
 # 4. Plan and apply with the generated tfvars
 terraform plan  -var-file=wizard.auto.tfvars
@@ -339,6 +395,26 @@ terraform apply -var-file=wizard.auto.tfvars
 
 function buildBicepCommands(answers) {
   const scenario = deriveScenario(answers);
+  if (answers.deployment_mode === 'multi') {
+    // Bicep multi-sub: only baseline is supported in v1; show the wrapper script.
+    return `# Multi-subscription Bicep deployment (BASELINE scenario only in v1)
+#
+# For firewall/VPN multi-sub today, use the Terraform path — provider
+# aliases there support all four scenarios.
+
+az login
+
+# One command runs all 3 layers in the right order (connectivity →
+# landingzone → connectivity peer-back → management):
+./scripts/deploy-multi-sub.sh \\
+  --connectivity-sub ${answers.connectivity_subscription_id} \\
+  --management-sub   ${answers.management_subscription_id} \\
+  --landingzone-sub  ${answers.landingzone_subscription_id} \\
+  --name-prefix ${answers.name_prefix} \\
+  --region ${answers.location} \\
+  --region-short ${shortRegion(answers.location)}
+`;
+  }
   return `# 1. Sign in to Azure and pin the subscription
 az login
 az account set --subscription ${answers.subscription_id}

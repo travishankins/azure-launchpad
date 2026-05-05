@@ -31,6 +31,7 @@ If you're an enterprise with a fully-staffed cloud platform team, **use Microsof
 | **Scenarios**                                           | One full reference, configurable                                       | Four pre-tiered scenarios (baseline, firewall, vpn, full)         |
 | **Module count**                                        | 30+ (Bicep) / 20+ (TF)                                                 | ~10 per stack                                                     |
 | **Management Groups**                                   | Required, full ALZ tree                                                | Opt-in module, simplified tree                                    |
+| **Subscription model**                                  | Multi-sub by default (connectivity / management / identity / per LZ)   | Single sub by default; opt-in 3-sub ALZ split (connectivity / management / landing-zone) via `deployment_mode = "multi"` |
 | **Identity**                                            | Dedicated `identity` MG + Entra Connect guidance                       | Hooks documented; no resources deployed by default                |
 | **Security stack**                                      | Defender for Cloud across plans, Sentinel, Key Vault, Bastion          | Key Vault + LAW; Defender / Sentinel left for you to enable       |
 | **Connectivity**                                        | Hub-spoke or vWAN, ExpressRoute + VPN, Azure Firewall Standard/Premium | Hub-spoke, VPN gateway, Azure Firewall **Basic**                  |

@@ -8,6 +8,10 @@ mock_provider "azurerm" {
     }
   }
 }
+
+mock_provider "azurerm" { alias = "connectivity" }
+mock_provider "azurerm" { alias = "management" }
+mock_provider "azurerm" { alias = "landingzone" }
 mock_provider "azapi" {}
 mock_provider "random" {}
 
@@ -20,8 +24,8 @@ run "plan" {
   command = plan
 
   assert {
-    condition     = length(azurerm_resource_group.this) == 6
-    error_message = "baseline must create exactly 6 resource groups"
+    condition     = (length(azurerm_resource_group.connectivity) + length(azurerm_resource_group.management) + length(azurerm_resource_group.landingzone)) == 6
+    error_message = "baseline must create exactly 6 resource groups (across all three layers)"
   }
 
   assert {

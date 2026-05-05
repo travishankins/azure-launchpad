@@ -8,10 +8,10 @@
 The `firewall` and `full` scenarios deploy an Azure Firewall in the hub. Azure Firewall ships in three SKUs:
 
 | SKU      | List price (West Central US) | Features                                                      |
-| -------- | --------------------------- | ------------------------------------------------------------ |
-| Basic    | ~$295/mo                    | App + Network rules, threat intel (alert), max 250 Mbps      |
-| Standard | ~$880/mo                    | + URL filtering, IDPS (alert), DNS proxy, threat intel (deny) |
-| Premium  | ~$1,750/mo                  | + TLS inspection, IDPS (deny), web categories                |
+| -------- | ---------------------------- | ------------------------------------------------------------- |
+| Basic    | ~$295/mo                     | App + Network rules, threat intel (alert), max 250 Mbps       |
+| Standard | ~$880/mo                     | + URL filtering, IDPS (alert), DNS proxy, threat intel (deny) |
+| Premium  | ~$1,750/mo                   | + TLS inspection, IDPS (deny), web categories                 |
 
 Azure Launchpad's target audience is SMB / SMEC: organisations standing up their first regulated landing zone, often with one or two workloads behind the firewall.
 

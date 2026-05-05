@@ -5,12 +5,13 @@
 ###############################################################################
 
 resource "azurerm_application_insights_workbook" "foundation_health" {
-  count = var.workbook_enabled ? 1 : 0
+  count    = var.workbook_enabled ? 1 : 0
+  provider = azurerm.management
 
   # Workbook resource names must be GUIDs. Deterministic per-suffix so re-deploys
   # don't churn the resource ID.
   name                = uuidv5("dns", "azure-launchpad-workbook-${local.suffix}")
-  resource_group_name = azurerm_resource_group.this["monitor"].name
+  resource_group_name = local.rg["monitor"].name
   location            = var.location
 
   display_name = "Azure Launchpad — Foundation Health"

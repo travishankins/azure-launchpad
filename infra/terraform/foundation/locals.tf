@@ -1,4 +1,25 @@
 locals {
+  # ---------------------------------------------------------------------------
+  # Multi-subscription resolution
+  # ---------------------------------------------------------------------------
+  # In `single` mode every alias resolves to var.subscription_id. In `multi`
+  # mode each layer can be split out; any layer left blank falls back to
+  # var.subscription_id so partial migrations work too.
+  is_multi_sub = var.deployment_mode == "multi"
+
+  sub_connectivity = local.is_multi_sub && var.connectivity_subscription_id != "" ? var.connectivity_subscription_id : var.subscription_id
+  sub_management   = local.is_multi_sub && var.management_subscription_id != "" ? var.management_subscription_id : var.subscription_id
+  sub_landingzone  = local.is_multi_sub && var.landingzone_subscription_id != "" ? var.landingzone_subscription_id : var.subscription_id
+
+  # Cross-validation: in multi mode, all three layer sub IDs must be set.
+  _validate_multi_sub_ids = (
+    local.is_multi_sub && (
+      var.connectivity_subscription_id == "" ||
+      var.management_subscription_id == "" ||
+      var.landingzone_subscription_id == ""
+    )
+  ) ? tobool("ERROR: deployment_mode = 'multi' requires connectivity_subscription_id, management_subscription_id, and landingzone_subscription_id to all be set.") : true
+
   # Scenario flags
   use_firewall = contains(["firewall", "full"], var.scenario)
   use_vpn      = contains(["vpn", "full"], var.scenario)
@@ -18,14 +39,24 @@ locals {
   # Naming
   suffix = "${var.name_prefix}-${var.region_short}"
 
-  rg_names = {
-    hub      = "rg-hub-${local.suffix}"
+  # ---------------------------------------------------------------------------
+  # Resource groups split by ALZ layer.
+  # In single mode this is purely organisational; in multi mode each group
+  # lands in its own subscription via the matching provider alias.
+  # ---------------------------------------------------------------------------
+  rgs_connectivity = {
+    hub = "rg-hub-${local.suffix}"
+  }
+  rgs_management = {
+    monitor = "rg-monitor-${local.suffix}"
+    backup  = "rg-backup-${local.suffix}"
+  }
+  rgs_landingzone = {
     spoke    = "rg-spoke-prod-${local.suffix}"
-    monitor  = "rg-monitor-${local.suffix}"
-    backup   = "rg-backup-${local.suffix}"
     security = "rg-security-${local.suffix}"
     migrate  = "rg-migrate-${local.suffix}"
   }
+  rg_names = merge(local.rgs_connectivity, local.rgs_management, local.rgs_landingzone)
 
   vnet_hub_name   = "vnet-hub-${local.suffix}"
   vnet_spoke_name = "vnet-spoke-prod-${local.suffix}"

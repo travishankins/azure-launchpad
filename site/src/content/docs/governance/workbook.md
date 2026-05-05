@@ -13,12 +13,12 @@ It's **opt-in** and **off by default** — workbooks themselves cost nothing, bu
 
 One `Microsoft.Insights/workbooks` resource (`kind: shared`) in `rg-monitor-<prefix>-<region>`, with four tabs:
 
-| Tab                       | Query                                                                                     | Notes                                                       |
-| ------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| **Workspace ingestion**   | `Usage` table grouped by `DataType`                                                       | Tells you which diagnostic settings are actually emitting.  |
-| **Firewall denies**       | `AZFWNetworkRule` where `Action == "Deny"`                                                | Empty on `baseline` / `vpn` scenarios — that's expected.    |
-| **Key Vault operations**  | `AzureDiagnostics` filtered to `MICROSOFT.KEYVAULT`                                       | Last 50 control + data plane ops with caller identity.      |
-| **Backup job status**     | `AddonAzureBackupJobs` summarised by `JobStatus`                                          | Empty until at least one backup item is being protected.    |
+| Tab                      | Query                                               | Notes                                                      |
+| ------------------------ | --------------------------------------------------- | ---------------------------------------------------------- |
+| **Workspace ingestion**  | `Usage` table grouped by `DataType`                 | Tells you which diagnostic settings are actually emitting. |
+| **Firewall denies**      | `AZFWNetworkRule` where `Action == "Deny"`          | Empty on `baseline` / `vpn` scenarios — that's expected.   |
+| **Key Vault operations** | `AzureDiagnostics` filtered to `MICROSOFT.KEYVAULT` | Last 50 control + data plane ops with caller identity.     |
+| **Backup job status**    | `AddonAzureBackupJobs` summarised by `JobStatus`    | Empty until at least one backup item is being protected.   |
 
 A `TimeRange` parameter at the top lets you pivot from 1h to 7d.
 

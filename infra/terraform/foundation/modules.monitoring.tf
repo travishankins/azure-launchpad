@@ -5,8 +5,12 @@ module "log_analytics" {
   source  = "Azure/avm-res-operationalinsights-workspace/azurerm"
   version = "0.5.1"
 
+  providers = {
+    azurerm = azurerm.management
+  }
+
   name                                               = "log-${local.suffix}"
-  resource_group_name                                = azurerm_resource_group.this["monitor"].name
+  resource_group_name                                = local.rg["monitor"].name
   location                                           = var.location
   log_analytics_workspace_retention_in_days          = var.log_retention_days
   log_analytics_workspace_sku                        = "PerGB2018"
@@ -23,8 +27,12 @@ module "automation_account" {
   source  = "Azure/avm-res-automation-automationaccount/azurerm"
   version = "0.2.0"
 
+  providers = {
+    azurerm = azurerm.management
+  }
+
   name                = "aa-${local.suffix}"
-  resource_group_name = azurerm_resource_group.this["monitor"].name
+  resource_group_name = local.rg["monitor"].name
   location            = var.location
   sku                 = "Basic"
   tags                = local.tags
@@ -37,8 +45,12 @@ module "recovery_vault" {
   source  = "Azure/avm-res-recoveryservices-vault/azurerm"
   version = "1.1.2"
 
+  providers = {
+    azurerm = azurerm.management
+  }
+
   name                = "rsv-${local.suffix}"
-  resource_group_name = azurerm_resource_group.this["backup"].name
+  resource_group_name = local.rg["backup"].name
   location            = var.location
   sku                 = "Standard"
   storage_mode_type   = "GeoRedundant"

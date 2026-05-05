@@ -41,6 +41,7 @@ export default defineConfig({
             { label: 'Firewall (~$336)', link: '/scenarios/firewall/' },
             { label: 'VPN (~$327)', link: '/scenarios/vpn/' },
             { label: 'Full (~$616)', link: '/scenarios/full/' },
+            { label: 'Multi-subscription (ALZ split)', link: '/scenarios/multi-subscription/' },
           ],
         },
         {

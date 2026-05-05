@@ -5,7 +5,7 @@ output "scenario" {
 
 output "resource_group_names" {
   description = "All resource group names by role."
-  value       = { for k, rg in azurerm_resource_group.this : k => rg.name }
+  value       = { for k, rg in local.rg : k => rg.name }
 }
 
 output "vnet_hub_id" {

@@ -7,8 +7,12 @@ module "key_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
   version = "0.10.2"
 
+  providers = {
+    azurerm = azurerm.landingzone
+  }
+
   name                = "kv-${local.suffix}-${random_string.kv_suffix.result}"
-  resource_group_name = azurerm_resource_group.this["security"].name
+  resource_group_name = local.rg["security"].name
   location            = var.location
   tenant_id           = data.azurerm_client_config.current.tenant_id
 

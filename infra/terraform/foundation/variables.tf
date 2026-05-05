@@ -1,9 +1,49 @@
 variable "subscription_id" {
-  description = "Target Azure subscription ID (GUID)."
+  description = "Target Azure subscription ID (GUID). In single-mode all RGs land here. In multi-mode this is the fallback for any *_subscription_id left blank."
   type        = string
   validation {
     condition     = can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.subscription_id))
     error_message = "subscription_id must be a valid GUID (e.g. 00000000-0000-0000-0000-000000000000)."
+  }
+}
+
+variable "deployment_mode" {
+  description = "single = all resources in subscription_id (default, SMB-friendly). multi = ALZ-aligned split across connectivity/management/landingzone subscriptions."
+  type        = string
+  default     = "single"
+  validation {
+    condition     = contains(["single", "multi"], var.deployment_mode)
+    error_message = "deployment_mode must be either 'single' or 'multi'."
+  }
+}
+
+variable "connectivity_subscription_id" {
+  description = "Subscription ID for the Connectivity layer (hub VNet, Firewall, VPN, NAT, peerings, private DNS). Required when deployment_mode = 'multi'; ignored otherwise."
+  type        = string
+  default     = ""
+  validation {
+    condition     = var.connectivity_subscription_id == "" || can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.connectivity_subscription_id))
+    error_message = "connectivity_subscription_id must be empty or a valid GUID."
+  }
+}
+
+variable "management_subscription_id" {
+  description = "Subscription ID for the Management layer (Log Analytics, Automation Account, Recovery Vault, Workbook, Budget). Required when deployment_mode = 'multi'; ignored otherwise."
+  type        = string
+  default     = ""
+  validation {
+    condition     = var.management_subscription_id == "" || can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.management_subscription_id))
+    error_message = "management_subscription_id must be empty or a valid GUID."
+  }
+}
+
+variable "landingzone_subscription_id" {
+  description = "Subscription ID for the Landing-Zone layer (spoke VNet, Key Vault, future workloads, security RG). Required when deployment_mode = 'multi'; ignored otherwise."
+  type        = string
+  default     = ""
+  validation {
+    condition     = var.landingzone_subscription_id == "" || can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.landingzone_subscription_id))
+    error_message = "landingzone_subscription_id must be empty or a valid GUID."
   }
 }
 

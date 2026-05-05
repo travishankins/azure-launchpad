@@ -8,6 +8,10 @@ mock_provider "azurerm" {
     }
   }
 }
+
+mock_provider "azurerm" { alias = "connectivity" }
+mock_provider "azurerm" { alias = "management" }
+mock_provider "azurerm" { alias = "landingzone" }
 mock_provider "azapi" {}
 mock_provider "random" {}
 
