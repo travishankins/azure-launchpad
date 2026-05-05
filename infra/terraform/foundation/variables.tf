@@ -121,3 +121,13 @@ variable "budget_resource_group_names" {
   type        = list(string)
   default     = []
 }
+
+# ----------------------------------------------------------------------------
+# Azure Monitor Workbook (opt-in)
+# ----------------------------------------------------------------------------
+
+variable "workbook_enabled" {
+  description = "Deploy the starter Foundation Health workbook into the monitoring resource group."
+  type        = bool
+  default     = false
+}

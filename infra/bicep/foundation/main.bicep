@@ -71,6 +71,11 @@ param budgetThresholds array = [
 @description('Email recipients for budget alerts. Required when budgetEnabled = true.')
 param budgetAlertEmails array = []
 
+// --- Optional: Azure Monitor workbook --------------------------------------
+
+@description('Deploy the starter Foundation Health workbook into the monitoring RG.')
+param workbookEnabled bool = false
+
 // ---------------------------------------------------------------------------
 // Variables
 // ---------------------------------------------------------------------------
@@ -298,6 +303,21 @@ module budgets 'modules/budgets.bicep' = if (budgetEnabled) {
 }
 
 // ---------------------------------------------------------------------------
+// Workbook (optional)
+// ---------------------------------------------------------------------------
+
+module workbook 'modules/workbook.bicep' = if (workbookEnabled) {
+  name: 'mod-workbook'
+  scope: rgMonitor
+  params: {
+    suffix: suffix
+    location: location
+    logAnalyticsWorkspaceId: monitoring.outputs.workspaceId
+    tags: mergedTags
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Outputs
 // ---------------------------------------------------------------------------
 
@@ -311,3 +331,4 @@ output firewallPrivateIp string = useFirewall ? firewall!.outputs.firewallPrivat
 output vpnGatewayId string = useVpn ? vpn!.outputs.vpnGatewayId : ''
 output natGatewayId string = useNat ? networking.outputs.natGatewayId : ''
 output budgetId string = budgetEnabled ? budgets!.outputs.budgetId : ''
+output workbookId string = workbookEnabled ? workbook!.outputs.workbookId : ''

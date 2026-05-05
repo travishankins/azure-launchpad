@@ -49,3 +49,8 @@ output "budget_id" {
   description = "Subscription budget resource ID (null when budgets are disabled)."
   value       = var.budget_enabled ? azurerm_consumption_budget_subscription.this[0].id : null
 }
+
+output "workbook_id" {
+  description = "Resource ID of the Foundation Health workbook (null when workbook_enabled = false)."
+  value       = var.workbook_enabled ? azurerm_application_insights_workbook.foundation_health[0].id : null
+}

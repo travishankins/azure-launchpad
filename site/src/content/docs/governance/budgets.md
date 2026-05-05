@@ -82,11 +82,11 @@ The output `budgetId` returns the ARM resource ID (empty string when disabled).
 
 ## How alerts work
 
-| Trigger | When you get an email |
-|---|---|
-| **Actual ≥ 50 %** | When your billed month-to-date spend crosses 50 % of the budget |
-| **Actual ≥ 80 %** | When billed spend crosses 80 % |
-| **Actual ≥ 100 %** | When billed spend crosses 100 % (the budget is informational; Azure will not stop deployments) |
+| Trigger                | When you get an email                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------- |
+| **Actual ≥ 50 %**      | When your billed month-to-date spend crosses 50 % of the budget                                   |
+| **Actual ≥ 80 %**      | When billed spend crosses 80 %                                                                    |
+| **Actual ≥ 100 %**     | When billed spend crosses 100 % (the budget is informational; Azure will not stop deployments)    |
 | **Forecasted ≥ 100 %** | When the projected end-of-month spend crosses 100 % — usually fires days before the actual breach |
 
 You can change the Actual thresholds by overriding `budget_thresholds` (TF) / `budgetThresholds` (Bicep). The Forecasted-100 % notification is always enabled.

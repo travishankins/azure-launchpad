@@ -1,0 +1,119 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## Azure Launchpad — Foundation Health\n\nStarter workbook over the Log Analytics workspace deployed by the foundation. Edit freely — this is a starting point, not a finished operations console.\n\n**Scope**: this workspace · **Time range**: pick from the parameter below.\n\n---"
+      },
+      "name": "header"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "timeRange",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Time range",
+            "type": 4,
+            "value": { "durationMs": 86400000 },
+            "typeSettings": {
+              "selectableValues": [
+                { "durationMs": 3600000 },
+                { "durationMs": 14400000 },
+                { "durationMs": 86400000 },
+                { "durationMs": 172800000 },
+                { "durationMs": 604800000 }
+              ]
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "params"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "### Workspace ingestion (last 24h, by table)\nWhich Azure Monitor tables are sending data and how much. If a table is empty, the diagnostic setting that feeds it isn't wired up yet."
+      },
+      "name": "ingestion-header"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "Usage\n| where TimeGenerated {TimeRange}\n| where IsBillable == true\n| summarize SizeMB = sum(Quantity) by DataType\n| order by SizeMB desc",
+        "size": 1,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table"
+      },
+      "name": "ingestion-table"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "### Azure Firewall (if `firewall` or `full` scenario)\nTop denied flows in the selected window. Empty result on `baseline` / `vpn` scenarios is expected."
+      },
+      "name": "fw-header"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AZFWNetworkRule\n| where TimeGenerated {TimeRange}\n| where Action == \"Deny\"\n| summarize Hits = count() by SourceIp, DestinationIp, DestinationPort, Protocol\n| order by Hits desc\n| take 20",
+        "size": 1,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table"
+      },
+      "name": "fw-denies"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "### Key Vault recent operations\nLast 50 control-plane / data-plane operations against the foundation Key Vault. Useful for spotting unexpected access."
+      },
+      "name": "kv-header"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics\n| where TimeGenerated {TimeRange}\n| where ResourceProvider == \"MICROSOFT.KEYVAULT\"\n| project TimeGenerated, OperationName, ResultType, identity_claim_upn_s, CallerIPAddress, requestUri_s\n| order by TimeGenerated desc\n| take 50",
+        "size": 1,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table"
+      },
+      "name": "kv-ops"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "### Recovery Services Vault — backup job status\nSucceeded / Failed / In Progress jobs across protected items.\n\n_Returns no rows until at least one item is being protected._"
+      },
+      "name": "rsv-header"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AddonAzureBackupJobs\n| where TimeGenerated {TimeRange}\n| summarize Jobs = count() by JobStatus, JobOperation\n| order by Jobs desc",
+        "size": 1,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table"
+      },
+      "name": "rsv-jobs"
+    }
+  ],
+  "fallbackResourceIds": [],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

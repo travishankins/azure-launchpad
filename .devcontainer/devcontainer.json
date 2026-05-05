@@ -1,0 +1,51 @@
+{
+  "name": "Azure Launchpad",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/azure-cli:1": {
+      "installBicep": true
+    },
+    "ghcr.io/devcontainers/features/terraform:1": {
+      "version": "1.14.9",
+      "tflint": "latest",
+      "terragrunt": "none"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12",
+      "installTools": false
+    },
+    "ghcr.io/devcontainers-extra/features/pre-commit:2": {},
+    "ghcr.io/guiyomh/features/just:0": {}
+  },
+  "postCreateCommand": "pre-commit install || true && cd site && npm install",
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "hashicorp.terraform",
+        "ms-azuretools.vscode-bicep",
+        "ms-azuretools.vscode-azureresourcegroups",
+        "github.vscode-github-actions",
+        "github.copilot",
+        "github.copilot-chat",
+        "redhat.vscode-yaml",
+        "davidanson.vscode-markdownlint",
+        "astro-build.astro-vscode",
+        "skellock.just"
+      ],
+      "settings": {
+        "terraform.experimentalFeatures.validateOnSave": true,
+        "[terraform]": { "editor.formatOnSave": true },
+        "[bicep]": { "editor.formatOnSave": true }
+      }
+    }
+  },
+  "forwardPorts": [4321],
+  "portsAttributes": {
+    "4321": { "label": "Astro docs site" }
+  }
+}

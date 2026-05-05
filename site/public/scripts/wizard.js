@@ -142,12 +142,70 @@ const QUESTIONS = [
       { value: 'starter', label: 'Starter set: Deny public RDP/SSH on Landing Zones + Audit Azure Local exit-readiness.' },
     ],
   },
+  {
+    id: 'advanced_mode',
+    label: 'Show advanced options? (log retention, budget, workbook)',
+    help: 'Most teams can skip this and re-deploy later. Turn on if you want to tune Log Analytics retention, set up a subscription budget with email alerts, or deploy the starter Foundation Health workbook in one shot.',
+    impact: 'Adds 3 optional questions. Defaults are safe — answering "skip" or leaving fields blank produces the same files you\'d get without advanced mode.',
+    type: 'radio',
+    options: [
+      { value: 'no', label: 'No — keep it simple, use defaults.' },
+      { value: 'yes', label: 'Yes — let me tune retention, budget, and workbook.' },
+    ],
+  },
+  {
+    id: 'log_retention_days',
+    label: 'Log Analytics retention (days)',
+    help: 'How long ingested logs are queryable in the foundation Log Analytics workspace. Default is 30. Anything ≤ 31 is included free; longer retention bills per GB-month.',
+    impact: '30 = free tier. 90 / 180 / 365 = costs ~$0.10 per GB per month above 31 days. Common picks: 30 (default), 90 (compliance baseline), 365 (audit / regulated).',
+    type: 'select',
+    optional: true,
+    default: '30',
+    options: ['30', '60', '90', '180', '365', '730'].map((d) => ({ value: d, label: `${d} days` })),
+  },
+  {
+    id: 'budget_amount',
+    label: 'Subscription monthly budget (USD) — leave blank to skip',
+    help: 'Deploys an Azure Consumption budget at subscription scope with Actual alerts at 50/80/100% and a Forecasted-100% alert. Free.',
+    impact: 'Adds Microsoft.Consumption/budgets at subscription scope. Cost: $0. Requires at least one alert email below.',
+    type: 'text',
+    placeholder: '500',
+    optional: true,
+    pattern: /^[1-9][0-9]{0,6}$/,
+    error: 'Whole-number USD amount, e.g. 500.',
+  },
+  {
+    id: 'budget_alert_emails',
+    label: 'Budget alert emails — comma-separated (only required if you set a budget above)',
+    help: 'Where Actual + Forecasted alerts are sent. Distribution lists work fine. Validated as plain RFC-5322-ish email syntax.',
+    impact: 'Each address gets one email per crossed threshold per billing period. Set up an inbox rule if you have many.',
+    type: 'text',
+    placeholder: 'finops@example.com, owner@example.com',
+    optional: true,
+    pattern: /^(\s*[^@\s,]+@[^@\s,]+\.[^@\s,]+\s*)(,\s*[^@\s,]+@[^@\s,]+\.[^@\s,]+\s*)*$/,
+    error: 'Comma-separated email list, e.g. finops@example.com, owner@example.com',
+  },
+  {
+    id: 'workbook_enabled',
+    label: 'Deploy the starter Foundation Health workbook?',
+    help: 'Adds an Azure Monitor workbook in the monitoring resource group with tabs for ingestion, firewall denies, KV ops, and backup jobs. Edit it freely after deploy.',
+    impact: 'One Microsoft.Insights/workbooks resource. Cost: $0 for the workbook itself; queries run against your already-paid LAW data.',
+    type: 'radio',
+    optional: true,
+    options: [
+      { value: 'no', label: 'No — I\'ll bring my own dashboards.' },
+      { value: 'yes', label: 'Yes — deploy the starter workbook.' },
+    ],
+  },
 ];
 
 // Steps that should be skipped depending on prior answers.
 function isStepSkipped(qid, answers) {
   if (qid === 'on_prem_cidrs') return answers.hybrid !== 'yes';
   if (qid === 'tenant_id' || qid === 'mg_optional' || qid === 'mg_policies') return answers.mg_enable !== 'yes';
+  if (qid === 'log_retention_days' || qid === 'budget_amount' || qid === 'budget_alert_emails' || qid === 'workbook_enabled') {
+    return answers.advanced_mode !== 'yes';
+  }
   return false;
 }
 
@@ -189,6 +247,24 @@ function buildTfvars(answers) {
       `on_premises_address_space = [${cidrs.map((c) => `"${c}"`).join(', ')}]`,
     );
   }
+  // --- Advanced mode -------------------------------------------------------
+  if (answers.advanced_mode === 'yes') {
+    if (answers.log_retention_days && answers.log_retention_days !== '30') {
+      lines.push(`log_retention_days = ${answers.log_retention_days}`);
+    }
+    if (answers.budget_amount) {
+      const emails = (answers.budget_alert_emails || '')
+        .split(',').map((s) => s.trim()).filter(Boolean);
+      lines.push('');
+      lines.push('budget_enabled       = true');
+      lines.push(`budget_amount        = ${answers.budget_amount}`);
+      lines.push(`budget_alert_emails  = [${emails.map((e) => `"${e}"`).join(', ')}]`);
+    }
+    if (answers.workbook_enabled === 'yes') {
+      lines.push('');
+      lines.push('workbook_enabled = true');
+    }
+  }
   return lines.join('\n') + '\n';
 }
 
@@ -212,6 +288,26 @@ function buildBicepParams(answers) {
       ...cidrs.map((c) => `  '${c}'`),
       `]`,
     );
+  }
+  // --- Advanced mode -------------------------------------------------------
+  if (answers.advanced_mode === 'yes') {
+    if (answers.log_retention_days && answers.log_retention_days !== '30') {
+      lines.push(`param logRetentionDays = ${answers.log_retention_days}`);
+    }
+    if (answers.budget_amount) {
+      const emails = (answers.budget_alert_emails || '')
+        .split(',').map((s) => s.trim()).filter(Boolean);
+      lines.push('');
+      lines.push('param budgetEnabled = true');
+      lines.push(`param budgetAmount = ${answers.budget_amount}`);
+      lines.push(`param budgetAlertEmails = [`);
+      emails.forEach((e) => lines.push(`  '${e}'`));
+      lines.push(`]`);
+    }
+    if (answers.workbook_enabled === 'yes') {
+      lines.push('');
+      lines.push('param workbookEnabled = true');
+    }
   }
   return lines.join('\n') + '\n';
 }
@@ -566,6 +662,11 @@ function render(root) {
         }
         if (q.id === 'tenant_id' && state.answers.mg_enable === 'yes' && !value) {
           errBox.textContent = 'Tenant ID is required when deploying Management Groups.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+        if (q.id === 'budget_alert_emails' && state.answers.budget_amount && !value) {
+          errBox.textContent = 'At least one alert email is required when a budget amount is set.';
           errBox.classList.remove('hidden');
           return;
         }
