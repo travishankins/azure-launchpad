@@ -3,7 +3,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
 // Repo name -> base path for GitHub Pages project sites.
-const REPO = 'smb-foundations';
+const REPO = 'azure-launchpad';
 const OWNER = process.env.GH_OWNER ?? 'travishankins';
 
 export default defineConfig({
@@ -11,7 +11,7 @@ export default defineConfig({
   base: process.env.SITE_BASE ?? `/${REPO}/`,
   integrations: [
     starlight({
-      title: 'SMB Foundations — Azure Landing Zones',
+      title: '🚀 Azure Launchpad (SMEC Edition)',
       description:
         'Deploy a hub-spoke Azure landing zone with either Terraform or Bicep, plus an interactive deployment wizard.',
       social: {

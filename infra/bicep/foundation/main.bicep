@@ -1,4 +1,4 @@
-// SMB Foundations — Azure Landing Zones — foundation root (Bicep)
+// Azure Launchpad (SMEC Edition) — foundation root (Bicep)
 // Functional parity with infra/terraform/foundation.
 //
 // Deploys hub-spoke networking, optional Azure Firewall (Basic), optional VPN
@@ -47,7 +47,7 @@ param logRetentionDays int = 30
 
 @description('Base tags applied to all resources.')
 param tags object = {
-  workload: 'smb-foundations'
+  workload: 'azure-launchpad'
   iac: 'bicep'
   cost_center: 'platform'
 }

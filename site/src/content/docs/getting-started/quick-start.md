@@ -3,13 +3,13 @@ title: Quick start (Terraform)
 description: Deploy the baseline scenario with Terraform in under an hour.
 ---
 
-If you just want to see something work, follow these five steps. Prefer Microsoft's native IaC? See [Quick start (Bicep)](/smb-foundations/getting-started/quick-start-bicep/) for the equivalent flow.
+If you just want to see something work, follow these five steps. Prefer Microsoft's native IaC? See [Quick start (Bicep)](/azure-launchpad/getting-started/quick-start-bicep/) for the equivalent flow.
 
 ## 1. Bootstrap the state backend
 
 ```bash
-git clone https://github.com/travishankins/smb-foundations.git
-cd smb-foundations
+git clone https://github.com/travishankins/azure-launchpad.git
+cd azure-launchpad
 az login
 export ARM_SUBSCRIPTION_ID=<subscription-id>
 ./scripts/bootstrap-state.sh
@@ -58,4 +58,4 @@ terraform workspace select -or-create firewall
 terraform apply -var "subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/firewall.tfvars
 ```
 
-> **Tip** — use the [deployment wizard](/smb-foundations/wizard/) to generate a `wizard.auto.tfvars` file tailored to your customer's needs.
+> **Tip** — use the [deployment wizard](/azure-launchpad/wizard/) to generate a `wizard.auto.tfvars` file tailored to your customer's needs.

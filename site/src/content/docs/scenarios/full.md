@@ -11,7 +11,7 @@ Microsoft retired the non-AZ `VpnGw1`–`VpnGw5` SKUs in May 2026 (`NonAzSkusNot
 
 ## What you get
 
-Everything from [Firewall](/smb-foundations/scenarios/firewall/) **and** [VPN](/smb-foundations/scenarios/vpn/):
+Everything from [Firewall](/azure-launchpad/scenarios/firewall/) **and** [VPN](/azure-launchpad/scenarios/vpn/):
 
 - Spoke route table sends `0.0.0.0/0` through the firewall
 - VPN Gateway on `GatewaySubnet`, gateway transit enabled across hub ↔ spoke peering
@@ -33,5 +33,5 @@ terraform apply -var-file=scenarios/full.tfvars
 ## Operational notes
 
 - Tighten the empty firewall policy to allow only required FQDNs/CIDRs before pushing real workloads
-- Add a `azurerm_local_network_gateway` + connection (see [VPN scenario](/smb-foundations/scenarios/vpn/) for template)
+- Add a `azurerm_local_network_gateway` + connection (see [VPN scenario](/azure-launchpad/scenarios/vpn/) for template)
 - Enable diagnostic settings on the firewall + VPN gateway pointing at the Log Analytics workspace already deployed

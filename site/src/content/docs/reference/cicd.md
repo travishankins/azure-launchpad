@@ -38,10 +38,10 @@ This creates `rg-tfstate-<prefix>-<region>` containing a Storage Account and a `
 No client secrets — GitHub Actions exchanges a workflow-issued OIDC token for an Azure access token. Run this **once per repo**:
 
 ```bash
-APP_NAME="smb-foundations-gha"
+APP_NAME="azure-launchpad-gha"
 SUB_ID=<subscription-id>
 TENANT_ID=<tenant-id>
-REPO=<owner>/smb-foundations          # e.g. travishankins/smb-foundations
+REPO=<owner>/azure-launchpad          # e.g. travishankins/azure-launchpad
 
 # 2a. Create app registration + service principal
 APP_ID=$(az ad app create --display-name $APP_NAME --query appId -o tsv)
@@ -141,7 +141,7 @@ This forces a human approval click before any apply runs against your subscripti
 
 ### Foundation (Terraform)
 
-1. Open a PR that adds or edits a tfvars under `infra/terraform/foundation/scenarios/` (or run the [wizard](/smb-foundations/wizard/) and commit its output).
+1. Open a PR that adds or edits a tfvars under `infra/terraform/foundation/scenarios/` (or run the [wizard](/azure-launchpad/wizard/) and commit its output).
 2. `terraform-plan.yml` runs automatically; review the plan artifact attached to the PR check.
 3. Merge the PR.
 4. **Actions → terraform-apply → Run workflow**, pick the scenario, click **Run**.

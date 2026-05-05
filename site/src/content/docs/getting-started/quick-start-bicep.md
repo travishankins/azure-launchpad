@@ -8,8 +8,8 @@ If you prefer Microsoft's native IaC, use the Bicep root — it deploys the same
 ## 1. Sign in
 
 ```bash
-git clone https://github.com/travishankins/smb-foundations.git
-cd smb-foundations
+git clone https://github.com/travishankins/azure-launchpad.git
+cd azure-launchpad
 az login
 az account set --subscription <subscription-id>
 ```
@@ -48,7 +48,7 @@ That's it. To switch scenarios, just point `--parameters` at a different `.bicep
 
 The two roots manage the *same* resource names by design (`rg-hub-contoso-wcus`, `vnet-hub-contoso-wcus`, etc.). **Do not** run both against the same subscription with the same `namePrefix`/`name_prefix` — pick one IaC and stick with it for that environment.
 
-> **Tip** — use the [deployment wizard](/smb-foundations/wizard/) and pick **Bicep** at step 1 to generate a `wizard.bicepparam` file tailored to your customer's needs.
+> **Tip** — use the [deployment wizard](/azure-launchpad/wizard/) and pick **Bicep** at step 1 to generate a `wizard.bicepparam` file tailored to your customer's needs.
 
 ## Management Groups (Bicep, tenant scope)
 

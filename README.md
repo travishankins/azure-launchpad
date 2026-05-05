@@ -1,6 +1,6 @@
-# SMB Foundations — Azure Landing Zones
+# 🚀 Azure Launchpad (SMEC Edition)
 
-Opinionated Azure platform foundations for SMB customers. Deploys a hub-spoke landing zone with either **Terraform** (AVM-TF) or **Bicep**. One repo, four cost-tiered scenarios, one command. Includes an opt-in Management Groups + Azure Policy module for ALZ-aligned governance.
+Opinionated Azure platform foundations for **small and midsized enterprises and corps (SMEC)**. Deploys a hub-spoke landing zone with either **Terraform** (AVM-TF) or **Bicep**. One repo, four cost-tiered scenarios, one command. Includes an opt-in Management Groups + Azure Policy module for ALZ-aligned governance.
 
 ## Scenarios
 
@@ -11,7 +11,7 @@ Opinionated Azure platform foundations for SMB customers. Deploys a hub-spoke la
 | `vpn`      | ~$187           | Baseline + VPN Gateway (`VpnGw1AZ`) + gateway transit                       |
 | `full`     | ~$476           | Firewall + VPN combined                                                     |
 
-📘 **Full docs + interactive deployment wizard:** [travishankins.github.io/smb-foundations](https://travishankins.github.io/smb-foundations/) — try the [deployment wizard](https://travishankins.github.io/smb-foundations/wizard/). Source for the site lives in [`site/`](./site/) and is published by [`.github/workflows/site-deploy.yml`](./.github/workflows/site-deploy.yml).
+📘 **Full docs + interactive deployment wizard:** [travishankins.github.io/azure-launchpad](https://travishankins.github.io/azure-launchpad/) — try the [deployment wizard](https://travishankins.github.io/azure-launchpad/wizard/). Source for the site lives in [`site/`](./site/) and is published by [`.github/workflows/site-deploy.yml`](./.github/workflows/site-deploy.yml).
 
 ## Prerequisites
 

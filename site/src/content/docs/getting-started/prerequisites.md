@@ -1,6 +1,6 @@
 ---
 title: Prerequisites
-description: What you need before deploying the SMB Foundations landing zone.
+description: What you need before deploying the Azure Launchpad (SMEC Edition) landing zone.
 ---
 
 ## Tooling
@@ -21,8 +21,8 @@ description: What you need before deploying the SMB Foundations landing zone.
 ## Local prep
 
 ```bash
-git clone https://github.com/travishankins/smb-foundations.git
-cd smb-foundations
+git clone https://github.com/travishankins/azure-launchpad.git
+cd azure-launchpad
 az login
 az account set --subscription <subscription-id>
 ```
@@ -47,4 +47,4 @@ The script is idempotent — re-running it just discovers the existing resources
 If you want plan/apply to run in GitHub Actions, you also need:
 
 - An Entra ID app registration with a federated credential trusting your repo
-- The repo variables listed in [CI/CD pipeline](/smb-foundations/reference/cicd/)
+- The repo variables listed in [CI/CD pipeline](/azure-launchpad/reference/cicd/)

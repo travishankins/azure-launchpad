@@ -1,6 +1,6 @@
 ---
 title: Compare scenarios
-description: Pick the right SMB Foundations landing zone scenario for your customer.
+description: Pick the right Azure Launchpad (SMEC Edition) landing zone scenario for your customer.
 ---
 
 Every scenario shares the same hub-spoke topology. You only add what the customer actually needs.
@@ -24,4 +24,4 @@ Every scenario shares the same hub-spoke topology. You only add what the custome
 - **Both?** → `full`.
 - **Neither?** → `baseline`.
 
-The [wizard](/smb-foundations/wizard/) walks you through this in 30 seconds and emits a tfvars file.
+The [wizard](/azure-launchpad/wizard/) walks you through this in 30 seconds and emits a tfvars file.

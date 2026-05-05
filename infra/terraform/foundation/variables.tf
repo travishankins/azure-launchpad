@@ -66,7 +66,7 @@ variable "tags" {
   description = "Base tags applied to all resources."
   type        = map(string)
   default = {
-    workload    = "smb-foundations"
+    workload    = "azure-launchpad"
     iac         = "terraform"
     cost_center = "platform"
   }
