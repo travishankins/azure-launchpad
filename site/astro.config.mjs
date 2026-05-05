@@ -13,6 +13,8 @@ export default defineConfig({
   redirects: {
     // Renamed 2026-05: Foundation Health workbook -> Monitoring workbook.
     '/governance/workbook/': '/governance/monitoring-workbook/',
+    // Renamed 2026-05: Operations & teardown -> Day-2 operations.
+    '/reference/operations/': '/reference/day-2-operations/',
   },
   integrations: [
     // Must come BEFORE starlight so the remark plugin runs first.
@@ -67,7 +69,7 @@ export default defineConfig({
           label: 'Reference',
           items: [
             { label: 'Architecture', link: '/reference/architecture/' },
-            { label: 'Operations & teardown', link: '/reference/operations/' },
+            { label: 'Day-2 operations', link: '/reference/day-2-operations/' },
             { label: 'CI/CD pipeline', link: '/reference/cicd/' },
             { label: 'Troubleshooting', link: '/reference/troubleshooting/' },
             { label: 'Glossary', link: '/reference/glossary/' },

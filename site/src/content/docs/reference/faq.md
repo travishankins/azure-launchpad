@@ -103,11 +103,11 @@ Bicep doesn't have explicit state — every `az deployment sub create` posts an 
 
 ### Does `terraform destroy` clean everything up?
 
-Almost. Soft-deleted Key Vaults remain for 7 days (and block name reuse). See [Operations & teardown](/azure-launchpad/reference/operations/) for `az keyvault purge`. The state RG (`rg-tfstate-*`) is intentionally **not** Terraform-managed — delete manually after customer offboarding.
+Almost. Soft-deleted Key Vaults remain for 7 days (and block name reuse). See [Day-2 operations](/azure-launchpad/reference/day-2-operations/) for `az keyvault purge`. The state RG (`rg-tfstate-*`) is intentionally **not** Terraform-managed — delete manually after customer offboarding.
 
 ### How do I tear down a Bicep deployment?
 
-Bicep has no `destroy`. Delete the resource groups directly: `az group delete --name <rg> --yes --no-wait` for each of the 6 RGs. See [Operations & teardown](/azure-launchpad/reference/operations/) for the full loop.
+Bicep has no `destroy`. Delete the resource groups directly: `az group delete --name <rg> --yes --no-wait` for each of the 6 RGs. See [Day-2 operations](/azure-launchpad/reference/day-2-operations/) for the full loop.
 
 ---
 
@@ -139,7 +139,7 @@ Bicep modules pin versions in their `br/public:avm/...` references. To bump, sea
 
 ### How do I add diagnostic settings?
 
-The Log Analytics workspace is created but not wired up by default (to avoid hitting the per-resource diagnostic settings cap). Add them in `diagnostics.tf` (Terraform) or a new `modules/diagnostics.bicep` (Bicep). See [Operations & teardown](/azure-launchpad/reference/operations/) for which categories to enable per resource type.
+The Log Analytics workspace is created but not wired up by default (to avoid hitting the per-resource diagnostic settings cap). Add them in `diagnostics.tf` (Terraform) or a new `modules/diagnostics.bicep` (Bicep). See [Day-2 operations](/azure-launchpad/reference/day-2-operations/) for which categories to enable per resource type.
 
 ### Can I add custom resources alongside this?
 
