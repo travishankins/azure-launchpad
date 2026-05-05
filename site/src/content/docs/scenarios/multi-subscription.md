@@ -5,10 +5,10 @@ description: ALZ-aligned deployment of the Azure Launchpad foundation across Con
 
 The foundation deploys in one of two modes:
 
-| Mode     | Subs | Best for                                                                                |
-| -------- | :--: | --------------------------------------------------------------------------------------- |
-| `single` |  1   | The SMB starter. Everything lands in one subscription. **This is the default.**         |
-| `multi`  |  3   | ALZ-aligned platform/workload separation: Connectivity / Management / Landing-Zone subs |
+| Mode         | Subs | Best for                                                                                |
+| ------------ | :--: | --------------------------------------------------------------------------------------- |
+| **single**   |  1   | The SMB starter. Everything lands in one subscription. **This is the default.**         |
+| **multi**    |  3   | ALZ-aligned platform/workload separation: Connectivity / Management / Landing-Zone subs |
 
 This page covers `multi` mode end-to-end: when to pick it, how the layers split, the cross-subscription wiring under the hood, the deploy workflow for both Terraform and Bicep, verification, and day-2 operations. Every other page in this site assumes single-sub — read those first if you're not sure which mode you want.
 
