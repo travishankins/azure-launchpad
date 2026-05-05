@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import mermaid from 'astro-mermaid';
 
 // Repo name -> base path for GitHub Pages project sites.
 const REPO = 'azure-launchpad';
@@ -10,6 +11,11 @@ export default defineConfig({
   site: `https://${OWNER}.github.io`,
   base: process.env.SITE_BASE ?? `/${REPO}/`,
   integrations: [
+    // Must come BEFORE starlight so the remark plugin runs first.
+    mermaid({
+      theme: 'default',
+      autoTheme: true,
+    }),
     starlight({
       title: '🚀 Azure Launchpad (SMB / SMEC Edition)',
       description:
