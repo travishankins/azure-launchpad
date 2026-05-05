@@ -1,5 +1,10 @@
 # 🚀 Azure Launchpad (SMB / SMEC Edition)
 
+[![Terraform plan](https://github.com/travishankins/azure-launchpad/actions/workflows/terraform-plan.yml/badge.svg?branch=main)](https://github.com/travishankins/azure-launchpad/actions/workflows/terraform-plan.yml)
+[![Bicep plan](https://github.com/travishankins/azure-launchpad/actions/workflows/bicep-plan.yml/badge.svg?branch=main)](https://github.com/travishankins/azure-launchpad/actions/workflows/bicep-plan.yml)
+[![Site deploy](https://github.com/travishankins/azure-launchpad/actions/workflows/site-deploy.yml/badge.svg?branch=main)](https://github.com/travishankins/azure-launchpad/actions/workflows/site-deploy.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
 Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** and **small and midsized enterprises and corps (SMEC)** — aligned with the Microsoft Cloud Adoption Framework (CAF) and Azure Landing Zone (ALZ) guidance, sized so a small platform team can actually own it. Deploys a hub-spoke topology with either **Terraform** (AVM-TF) or **Bicep**. One repo, four cost-tiered scenarios, one command. Includes an opt-in Management Groups + Azure Policy module for ALZ-aligned governance.
 
 ## Scenarios
@@ -85,3 +90,11 @@ GitHub Actions uses OIDC (no secrets). Configure these repository **variables**:
 | `TFSTATE_RG` / `TFSTATE_SA` / `TFSTATE_CONTAINER` | From `bootstrap-state.sh` output        |
 
 `terraform-plan.yml` runs on PR for all four scenarios in parallel. `terraform-apply.yml` is a manual workflow gated by the protected `prod` GitHub environment.
+
+## Contributing
+
+Issues and PRs are welcome. Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for the development setup, branch / commit conventions, and local checks. By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues should be reported privately per [`SECURITY.md`](SECURITY.md).
+
+## License
+
+Apache License 2.0 — see [`LICENSE`](LICENSE).

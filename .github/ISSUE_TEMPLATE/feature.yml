@@ -1,0 +1,50 @@
+name: Feature request
+description: Suggest a new module, scenario, wizard option, or docs page.
+title: "[feat] "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! Please describe the problem you're trying to solve, not just the solution — that gives us the most flexibility to design something that fits.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - New Terraform / Bicep module
+        - New scenario
+        - Wizard improvement
+        - Docs / site improvement
+        - CI / tooling
+        - Governance (Management Groups, policies, budgets)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      placeholder: As a platform admin for an SMB, I need ... so that ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How might this work? What would the user-facing change be?
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Links to docs, similar features in other tools, screenshots.
+    validations:
+      required: false

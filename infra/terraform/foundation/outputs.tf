@@ -21,6 +21,7 @@ output "vnet_spoke_id" {
 output "key_vault_uri" {
   description = "Key Vault URI."
   value       = module.key_vault.uri
+  sensitive   = true
 }
 
 output "log_analytics_workspace_id" {
@@ -31,6 +32,7 @@ output "log_analytics_workspace_id" {
 output "firewall_private_ip" {
   description = "Azure Firewall private IP (null when scenario does not include firewall)."
   value       = local.use_firewall ? azurerm_firewall.this[0].ip_configuration[0].private_ip_address : null
+  sensitive   = true
 }
 
 output "vpn_gateway_id" {

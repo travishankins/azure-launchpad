@@ -1,0 +1,28 @@
+# CODEOWNERS for Azure Launchpad (SMB / SMEC Edition)
+# Order matters: the LAST matching pattern wins.
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+*                                       @travishankins
+
+# Infrastructure as Code
+/infra/                                 @travishankins
+/infra/terraform/                       @travishankins
+/infra/bicep/                           @travishankins
+/scripts/                               @travishankins
+
+# CI / CD
+/.github/                               @travishankins
+/.github/workflows/                     @travishankins
+
+# Docs site (content + Astro/Starlight config + wizard)
+/site/                                  @travishankins
+/site/src/content/docs/                 @travishankins
+/site/public/scripts/                   @travishankins
+
+# Repo-level governance files require maintainer review
+/LICENSE                                @travishankins
+/SECURITY.md                            @travishankins
+/CODE_OF_CONDUCT.md                     @travishankins
+/CONTRIBUTING.md                        @travishankins
+/CODEOWNERS                             @travishankins

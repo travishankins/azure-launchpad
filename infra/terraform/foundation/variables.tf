@@ -1,6 +1,10 @@
 variable "subscription_id" {
-  description = "Target Azure subscription ID."
+  description = "Target Azure subscription ID (GUID)."
   type        = string
+  validation {
+    condition     = can(regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", var.subscription_id))
+    error_message = "subscription_id must be a valid GUID (e.g. 00000000-0000-0000-0000-000000000000)."
+  }
 }
 
 variable "scenario" {

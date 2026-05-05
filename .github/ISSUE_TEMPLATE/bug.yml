@@ -1,0 +1,92 @@
+name: Bug report
+description: Something is wrong with a Terraform module, Bicep module, the wizard, the docs site, or CI.
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug! Please fill out the sections below so we can reproduce and fix the issue quickly.
+
+        🔒 **If this is a security vulnerability, do not file it here.** Follow [`SECURITY.md`](https://github.com/travishankins/azure-launchpad/blob/main/SECURITY.md) instead.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Terraform module
+        - Bicep module
+        - Wizard (site/public/scripts/wizard.js)
+        - Docs site content
+        - CI / GitHub Actions
+        - Bootstrap script
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: scenario
+    attributes:
+      label: Scenario (if IaC-related)
+      options:
+        - baseline
+        - firewall
+        - vpn
+        - full
+        - management-groups
+        - n/a
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit SHA
+      description: "`git rev-parse --short HEAD` or the release tag"
+      placeholder: e.g. v0.1.0 or fb66d7c
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug. Include error messages, stack traces, or screenshots.
+      placeholder: When I run `terraform apply` for the `vpn` scenario in `northeurope`, ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: I expected the VPN gateway to be created with VpnGw2AZ.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimum reproduction. Redact subscription IDs / tenant IDs / customer prefixes.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Tool versions help a lot.
+      value: |
+        - OS:
+        - Terraform version (`terraform version`):
+        - Azure CLI version (`az version`):
+        - Bicep version (`az bicep version`):
+        - Browser (if site/wizard bug):
+    validations:
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Logs, plan output, screenshots, links.
+    validations:
+      required: false
