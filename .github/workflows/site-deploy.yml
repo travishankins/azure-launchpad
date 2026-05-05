@@ -34,8 +34,10 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Build
         env:
+          # Custom domain (azurelaunchpad.com) — site/base default to '/'
+          # in astro.config.mjs, so no SITE_BASE override here.
           GH_OWNER: ${{ github.repository_owner }}
-          SITE_BASE: /${{ github.event.repository.name }}/
+          SITE_URL: https://azurelaunchpad.com
         run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
