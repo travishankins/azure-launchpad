@@ -1,6 +1,6 @@
 ---
-title: Foundation Health workbook
-description: Opt-in Azure Monitor workbook over the foundation Log Analytics workspace — what it shows, how to enable it (Terraform / Bicep / multi-sub), how to extend it, and how to remove it.
+title: Monitoring workbook
+description: Opt-in Azure Monitor workbook ("Foundation Health") over the foundation Log Analytics workspace — what it shows, how to enable it (Terraform / Bicep / multi-sub), how to extend it, and how to remove it.
 ---
 
 The **Foundation Health workbook** is a starter [Azure Monitor workbook](https://learn.microsoft.com/azure/azure-monitor/visualize/workbooks-overview) that ships with the foundation. It deploys into the monitoring resource group and is scoped to the foundation Log Analytics workspace.

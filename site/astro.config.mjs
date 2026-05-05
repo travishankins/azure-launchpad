@@ -10,6 +10,10 @@ const OWNER = process.env.GH_OWNER ?? 'travishankins';
 export default defineConfig({
   site: `https://${OWNER}.github.io`,
   base: process.env.SITE_BASE ?? `/${REPO}/`,
+  redirects: {
+    // Renamed 2026-05: Foundation Health workbook -> Monitoring workbook.
+    '/governance/workbook/': '/governance/monitoring-workbook/',
+  },
   integrations: [
     // Must come BEFORE starlight so the remark plugin runs first.
     mermaid({
@@ -56,7 +60,7 @@ export default defineConfig({
             { label: 'Management Groups', link: '/governance/management-groups/' },
             { label: 'Policy catalog', link: '/governance/policy-catalog/' },
             { label: 'Budgets', link: '/governance/budgets/' },
-            { label: 'Foundation Health workbook', link: '/governance/workbook/' },
+            { label: 'Monitoring workbook', link: '/governance/monitoring-workbook/' },
           ],
         },
         {
