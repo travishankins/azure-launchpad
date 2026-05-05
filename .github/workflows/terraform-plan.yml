@@ -22,8 +22,8 @@ jobs:
   fmt-validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: ${{ env.TF_VERSION }}
       - name: terraform fmt
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: fmt-validate
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: aquasecurity/tfsec-action@v1.0.3
         with:
           working_directory: infra/terraform/foundation
@@ -47,12 +47,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: fmt-validate
     steps:
-      - uses: actions/checkout@v4
-      - uses: terraform-linters/setup-tflint@v4
+      - uses: actions/checkout@v6
+      - uses: terraform-linters/setup-tflint@v6
         with:
           tflint_version: v0.53.0
       - name: Cache tflint plugins
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.tflint.d/plugins
           key: tflint-${{ hashFiles('.tflint.hcl') }}
@@ -74,12 +74,12 @@ jobs:
         scenario: [ baseline, firewall, vpn, full ]
     environment: plan
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: ${{ env.TF_VERSION }}
       - name: Azure login (OIDC)
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
@@ -108,7 +108,7 @@ jobs:
           terraform -chdir=${{ env.WORKING_DIR }} plan \
             -var-file=scenarios/${{ matrix.scenario }}.tfvars \
             -out=tfplan.${{ matrix.scenario }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: tfplan-${{ matrix.scenario }}
           path: ${{ env.WORKING_DIR }}/tfplan.${{ matrix.scenario }}

@@ -21,9 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: apply-mg
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Azure login (OIDC, no subscription)
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_MG_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}

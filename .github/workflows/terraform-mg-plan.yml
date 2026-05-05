@@ -30,8 +30,8 @@ jobs:
   fmt-validate-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: ${{ env.TF_VERSION }}
       - name: terraform fmt
@@ -52,12 +52,12 @@ jobs:
         scenario: [ minimal, full ]
     environment: plan-mg
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: ${{ env.TF_VERSION }}
       - name: Azure login (OIDC)
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_MG_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
@@ -85,7 +85,7 @@ jobs:
           terraform -chdir=${{ env.WORKING_DIR }} plan \
             -var-file=scenarios/${{ matrix.scenario }}.tfvars \
             -out=tfplan.${{ matrix.scenario }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: tfplan-mg-${{ matrix.scenario }}
           path: ${{ env.WORKING_DIR }}/tfplan.${{ matrix.scenario }}
