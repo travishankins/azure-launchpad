@@ -3,6 +3,7 @@
 [![Terraform plan](https://github.com/travishankins/azure-launchpad/actions/workflows/terraform-plan.yml/badge.svg?branch=main)](https://github.com/travishankins/azure-launchpad/actions/workflows/terraform-plan.yml)
 [![Bicep plan](https://github.com/travishankins/azure-launchpad/actions/workflows/bicep-plan.yml/badge.svg?branch=main)](https://github.com/travishankins/azure-launchpad/actions/workflows/bicep-plan.yml)
 [![Site deploy](https://github.com/travishankins/azure-launchpad/actions/workflows/site-deploy.yml/badge.svg?branch=main)](https://github.com/travishankins/azure-launchpad/actions/workflows/site-deploy.yml)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/travishankins/azure-launchpad)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** and **small and midsized enterprises and corps (SMEC)** — aligned with the Microsoft Cloud Adoption Framework (CAF) and Azure Landing Zone (ALZ) guidance, sized so a small platform team can actually own it. Deploys a hub-spoke topology with either **Terraform** (AVM-TF) or **Bicep**. One repo, four cost-tiered scenarios, one command. Includes an opt-in Management Groups + Azure Policy module for ALZ-aligned governance.
@@ -23,6 +24,8 @@ Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** 
 - Terraform `>= 1.9`
 - Azure CLI logged in (`az login`) with permissions to create resources in the target subscription
 - For `vpn`/`full`: the on-premises address space (CIDR list)
+
+> 💡 **Skip the local install** by opening the repo in [GitHub Codespaces](https://codespaces.new/travishankins/azure-launchpad) or *VS Code → Reopen in Container*. The shipped [`.devcontainer`](./.devcontainer/devcontainer.json) preinstalls Terraform 1.14, Azure CLI + Bicep, Node 20, GitHub CLI, pre-commit, and `just` — just `az login` and you're ready to deploy.
 
 ## Quick start
 

@@ -5,12 +5,40 @@ description: What you need before deploying the Azure Launchpad (SMB / SMEC Edit
 
 ## Tooling
 
+The fastest way to get every tool below installed at the right version is to **open the repo in GitHub Codespaces or VS Code Dev Containers** — see [Dev container](#dev-container) below. Otherwise, install locally:
+
 | Tool                  | Minimum version | Why                             |
 | --------------------- | --------------- | ------------------------------- |
 | Terraform             | 1.9             | Module syntax, validation rules |
 | Azure CLI             | 2.60            | `az login`, bootstrap script    |
 | GitHub CLI (optional) | 2.40            | OIDC federated credential setup |
 | `git`                 | 2.30            | Clone the repo                  |
+
+## Dev container
+
+The repo ships a [`.devcontainer/devcontainer.json`](https://github.com/travishankins/azure-launchpad/blob/main/.devcontainer/devcontainer.json) that pre-installs everything you need to deploy the foundation, build the docs site, and run the test suites — zero local setup required.
+
+**What's inside:**
+
+| Component       | Version / source                                      | Used for                                                  |
+| --------------- | ----------------------------------------------------- | --------------------------------------------------------- |
+| Ubuntu 24.04    | `mcr.microsoft.com/devcontainers/base:ubuntu-24.04`   | Base image                                                |
+| Azure CLI       | latest, with `bicep` extension                        | `az login`, deploys, bootstrap script                     |
+| Terraform       | 1.14.9 + tflint                                       | Foundation + management-groups modules                    |
+| Node.js         | 20                                                    | Astro / Starlight docs site (`cd site && npm run dev`)    |
+| Python          | 3.12                                                  | Helper scripts                                            |
+| GitHub CLI      | latest                                                | OIDC federated credential setup, repo automation          |
+| pre-commit      | latest                                                | Auto-runs `terraform fmt`, lint, etc. on commit           |
+| just            | latest                                                | Recipe runner (`just plan baseline`, `just docs`, ...)    |
+
+Also pre-configures the recommended VS Code extensions (HashiCorp Terraform, Bicep, Astro, GitHub Copilot, markdownlint, just) and forwards port `4321` for the docs dev server.
+
+**How to use it:**
+
+- **GitHub Codespaces:** Click *Code → Codespaces → Create codespace on main* in the repo. Free tier covers ~60h/mo on a 2-core machine.
+- **VS Code (local Docker):** Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), then *Command Palette → Dev Containers: Reopen in Container*.
+
+On first open, `postCreateCommand` runs `pre-commit install` and `npm install` in `site/` — give it ~2 min, then you're ready to `az login` and deploy.
 
 ## Azure access
 
