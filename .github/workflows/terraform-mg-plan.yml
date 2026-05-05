@@ -85,7 +85,7 @@ jobs:
           terraform -chdir=${{ env.WORKING_DIR }} plan \
             -var-file=scenarios/${{ matrix.scenario }}.tfvars \
             -out=tfplan.${{ matrix.scenario }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: tfplan-mg-${{ matrix.scenario }}
           path: ${{ env.WORKING_DIR }}/tfplan.${{ matrix.scenario }}
