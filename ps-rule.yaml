@@ -1,0 +1,51 @@
+# PSRule for Azure config — runs against compiled Bicep ARM templates in CI.
+# Docs: https://azure.github.io/PSRule.Rules.Azure/
+#
+# Goal: enforce a security/cost baseline on all Bicep modules without
+# blocking obviously-acceptable design choices for SMB / SMEC scenarios.
+
+# Use the Azure.GA_2024_06 baseline (latest GA at time of writing).
+binding:
+  preferTargetInfo: true
+  targetType:
+    - resourceType
+    - type
+
+input:
+  pathIgnore:
+    # Skip TF, site, scripts — only Bicep is the target.
+    - "infra/terraform/**"
+    - "site/**"
+    - "scripts/**"
+    - ".github/**"
+    - "docs/**"
+    # Skip lockfiles and vendored content.
+    - "**/*.lock.hcl"
+    - "**/.terraform/**"
+
+include:
+  module:
+    - PSRule.Rules.Azure
+
+execution:
+  unprocessedObject: Ignore
+  duplicateResourceId: Warn
+
+output:
+  culture:
+    - en-US
+
+# Suppress findings that don't apply to SMB-scale landing zones or
+# that are intentional design decisions documented elsewhere.
+suppression:
+  # Azure Firewall Basic SKU is intentional — Standard/Premium quadruples cost
+  # and is out of scope for SMB/SMEC. Documented in scenarios/firewall.md.
+  Azure.Firewall.PolicyMode:
+    - .
+  Azure.Firewall.Mode:
+    - .
+
+  # Region availability zone enforcement — many regions (incl. westcentralus)
+  # don't expose 3 AZs for every resource. Documented in scenarios/.
+  Azure.VNG.AvailabilityZoneSKU:
+    - .

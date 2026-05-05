@@ -1,0 +1,27 @@
+# Markdownlint config for Azure Launchpad docs (site/) and repo top-level.
+# Reference: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+default: true
+
+# Allow long lines — prose, tables, and badge rows often exceed any reasonable limit.
+MD013: false
+
+# Allow inline HTML — Starlight + admonitions sometimes require it.
+MD033: false
+
+# Allow duplicate headings under different parents (common in scenario pages).
+MD024:
+  siblings_only: true
+
+# First line in a file does not need to be a top-level heading (frontmatter).
+MD041: false
+
+# Bare URLs are fine (links are converted at render time).
+MD034: false
+
+# Allow emphasis used as a heading in admonitions.
+MD036: false
+
+# Trailing punctuation in headings is fine when it's intentional (?, !).
+MD026:
+  punctuation: ".,;:"

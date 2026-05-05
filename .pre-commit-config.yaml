@@ -1,0 +1,60 @@
+# Pre-commit hooks for Azure Launchpad.
+# Install:  pre-commit install
+# Run all:  pre-commit run --all-files
+#
+# Docs: https://pre-commit.com/
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: "^(LICENSE|.*\\.tfplan|.*\\.lock\\.hcl)$"
+      - id: end-of-file-fixer
+        exclude: "^(LICENSE|.*\\.tfplan)$"
+      - id: check-yaml
+        args: [ --allow-multiple-documents ]
+      - id: check-json
+        exclude: "^(site/(node_modules|\\.astro|dist)/.*|.*tsconfig.*\\.json)$"
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [ "--maxkb=500" ]
+        exclude: "^(site/package-lock\\.json|.*\\.tfplan)$"
+      - id: mixed-line-ending
+        args: [ --fix=lf ]
+
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.96.1
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate
+        args:
+          - --hook-config=--retry-once-with-cleanup=true
+      - id: terraform_tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+      - id: terraform_tfsec
+        exclude: "^infra/terraform/foundation/tests/"
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.41.0
+    hooks:
+      - id: markdownlint
+        args:
+          [
+            "--config",
+            ".markdownlint.yaml",
+            "--ignore",
+            "site/node_modules",
+            "--ignore",
+            "site/dist",
+            "--ignore",
+            "site/.astro",
+          ]
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [ commit-msg ]
+        args: []

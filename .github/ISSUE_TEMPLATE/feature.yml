@@ -1,7 +1,7 @@
 name: Feature request
 description: Suggest a new module, scenario, wizard option, or docs page.
 title: "[feat] "
-labels: ["enhancement", "triage"]
+labels: [ "enhancement", "triage" ]
 body:
   - type: markdown
     attributes:

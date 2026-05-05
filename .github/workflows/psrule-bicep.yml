@@ -1,0 +1,47 @@
+name: psrule-bicep
+
+on:
+  pull_request:
+    paths:
+      - "infra/bicep/**"
+      - "ps-rule.yaml"
+      - ".github/workflows/psrule-bicep.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  psrule:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run PSRule for Azure
+        uses: microsoft/ps-rule@v2.9.0
+        with:
+          modules: PSRule.Rules.Azure
+          inputPath: infra/bicep/
+          outputFormat: Sarif
+          outputPath: psrule-results.sarif
+          summary: true
+          # Use the Azure GA baseline for stable rules.
+          baseline: Azure.GA_2024_06
+        continue-on-error: true
+
+      - name: Upload SARIF to GitHub code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: psrule-results.sarif
+          category: psrule-bicep
+        continue-on-error: true
+
+      - name: Upload PSRule results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: psrule-bicep-results
+          path: psrule-results.sarif
+          retention-days: 14

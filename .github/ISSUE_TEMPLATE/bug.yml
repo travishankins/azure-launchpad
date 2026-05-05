@@ -1,7 +1,8 @@
 name: Bug report
-description: Something is wrong with a Terraform module, Bicep module, the wizard, the docs site, or CI.
+description: Something is wrong with a Terraform module, Bicep module, the
+  wizard, the docs site, or CI.
 title: "[bug] "
-labels: ["bug", "triage"]
+labels: [ "bug", "triage" ]
 body:
   - type: markdown
     attributes:
@@ -48,7 +49,8 @@ body:
     id: what-happened
     attributes:
       label: What happened?
-      description: A clear description of the bug. Include error messages, stack traces, or screenshots.
+      description: A clear description of the bug. Include error messages, stack
+        traces, or screenshots.
       placeholder: When I run `terraform apply` for the `vpn` scenario in `northeurope`, ...
     validations:
       required: true
@@ -63,7 +65,8 @@ body:
     id: reproduction
     attributes:
       label: Steps to reproduce
-      description: Minimum reproduction. Redact subscription IDs / tenant IDs / customer prefixes.
+      description: Minimum reproduction. Redact subscription IDs / tenant IDs /
+        customer prefixes.
       value: |
         1.
         2.

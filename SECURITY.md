@@ -21,12 +21,12 @@ If you discover a security vulnerability in **Azure Launchpad (SMB / SMEC Editio
 
 ### What to expect
 
-| Stage | Target |
-|-------|--------|
-| Acknowledgement of report | within 3 business days |
+| Stage                                            | Target                 |
+| ------------------------------------------------ | ---------------------- |
+| Acknowledgement of report                        | within 3 business days |
 | Initial assessment + severity rating (CVSS v3.1) | within 7 business days |
-| Fix in `main` for High / Critical | within 30 days |
-| Public advisory + credit (if you want it) | after fix is released |
+| Fix in `main` for High / Critical                | within 30 days         |
+| Public advisory + credit (if you want it)        | after fix is released  |
 
 ### Scope
 

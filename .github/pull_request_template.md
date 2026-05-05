@@ -10,6 +10,7 @@ For first-time contributors, see CONTRIBUTING.md.
 ## Type of change
 
 <!-- Tick whichever apply. -->
+
 - [ ] `feat` — new feature (module, scenario, wizard step, docs page)
 - [ ] `fix` — bug fix
 - [ ] `docs` — documentation only
@@ -21,6 +22,7 @@ For first-time contributors, see CONTRIBUTING.md.
 ## Affected area
 
 <!-- Tick whichever apply. -->
+
 - [ ] Terraform (`infra/terraform/`)
 - [ ] Bicep (`infra/bicep/`)
 - [ ] Wizard (`site/public/scripts/wizard.js`)

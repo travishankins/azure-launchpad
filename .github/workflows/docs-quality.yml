@@ -1,0 +1,48 @@
+name: docs-quality
+
+on:
+  pull_request:
+    paths:
+      - "site/**"
+      - "**/*.md"
+      - ".markdownlint.yaml"
+      - ".lychee.toml"
+      - ".github/workflows/docs-quality.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  markdownlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          config: .markdownlint.yaml
+          globs: |
+            **/*.md
+            !site/node_modules
+            !site/dist
+            !site/.astro
+            !**/CHANGELOG.md
+
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore lychee cache
+        uses: actions/cache@v4
+        with:
+          path: .lycheecache
+          key: cache-lychee-${{ github.sha }}
+          restore-keys: cache-lychee-
+      - name: Lychee link check
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --config .lychee.toml --no-progress --cache './**/*.md' './**/*.mdx'
+          fail: true
+          token: ${{ secrets.GITHUB_TOKEN }}

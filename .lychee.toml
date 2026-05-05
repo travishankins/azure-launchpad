@@ -1,0 +1,46 @@
+# Lychee link checker config.
+# https://github.com/lycheeverse/lychee
+
+# Verbose output for CI.
+verbose = true
+no_progress = true
+
+# Cache results between runs (CI caches the directory).
+cache = true
+max_cache_age = "2d"
+
+# Check both internal and external links.
+include_verbatim = false
+
+# Reasonable timeouts.
+timeout = 20
+max_retries = 2
+max_concurrency = 8
+
+# Accept these status codes as success in addition to the 2xx defaults.
+accept = [200, 201, 202, 203, 204, 206, 301, 302, 303, 307, 308, 999]
+
+# Skip checking these patterns:
+# - Localhost / loopback
+# - Example/placeholder GUIDs and CIDRs
+# - Azure portal URLs that require auth
+# - GitHub Pages own URL (the site itself, links are relative anyway)
+exclude = [
+  "^http://localhost",
+  "^https?://127\\.0\\.0\\.1",
+  "^https://portal\\.azure\\.com",
+  "^https://travishankins\\.github\\.io/azure-launchpad",
+  "00000000-0000-0000-0000-000000000000",
+  "example\\.com",
+]
+
+# Skip checking files that aren't link sources.
+exclude_path = [
+  "node_modules",
+  ".astro",
+  "dist",
+  "site/dist",
+  "site/node_modules",
+  "site/.astro",
+  ".terraform",
+]
