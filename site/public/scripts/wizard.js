@@ -9,7 +9,7 @@ const QUESTIONS = [
     impact: {
       bullets: [
         ['Terraform: ', 'HCL + Azure provider, state stored in Azure Storage. Multi-subscription mode supports all four scenarios.'],
-        ['Bicep: ', 'native ARM-based, deployment history stored in Azure. Multi-subscription mode is baseline-only in v1.'],
+        ['Bicep: ', 'native ARM-based, deployment history stored in Azure. Multi-subscription mode supports all four scenarios via the deploy-multi-sub.sh wrapper.'],
       ],
       note: 'The wizard will tailor the rest of the questions and emit the right files + commands for your choice.',
     },
@@ -23,7 +23,7 @@ const QUESTIONS = [
     id: 'deployment_mode',
     label: 'Single subscription or ALZ-aligned multi-subscription split?',
     help: 'Single = everything (hub, spoke, monitoring, KV) lands in one subscription. Multi = ALZ-aligned split across three subscriptions: Connectivity (hub VNet, firewall, VPN), Management (Log Analytics, RSV, automation), Landing-Zone (spoke VNet, KV, workloads). Multi requires Contributor on each sub.',
-    impact: 'Single: simplest, most SMB-friendly, no cross-sub RBAC. Multi: matches Microsoft ALZ, separates platform from workloads, but needs 3 subscriptions and cross-sub Network Contributor for peering. Bicep multi-sub is baseline-only in v1; Terraform multi-sub supports all four scenarios.',
+    impact: 'Single: simplest, most SMB-friendly, no cross-sub RBAC. Multi: matches Microsoft ALZ, separates platform from workloads, but needs 3 subscriptions and Network Contributor cross-sub for peering and PDZ wiring. Both Terraform and Bicep multi-sub support all four scenarios (baseline / firewall / vpn / full).',
     type: 'radio',
     options: [
       { value: 'single', label: 'Single subscription — everything in one sub. Default for SMB.' },
@@ -396,20 +396,20 @@ terraform apply -var-file=wizard.auto.tfvars
 function buildBicepCommands(answers) {
   const scenario = deriveScenario(answers);
   if (answers.deployment_mode === 'multi') {
-    // Bicep multi-sub: only baseline is supported in v1; show the wrapper script.
-    return `# Multi-subscription Bicep deployment (BASELINE scenario only in v1)
-#
-# For firewall/VPN multi-sub today, use the Terraform path — provider
-# aliases there support all four scenarios.
+    // Bicep multi-sub now supports all four scenarios. The wrapper script
+    // runs the connectivity → landingzone → connectivity peer-back →
+    // management sequence and threads firewall/VPN outputs cross-sub.
+    return `# Multi-subscription Bicep deployment (scenario: ${scenario})
 
 az login
 
-# One command runs all 3 layers in the right order (connectivity →
-# landingzone → connectivity peer-back → management):
+# One command runs all 4 deploy steps in the right order
+# (connectivity → landingzone → connectivity peer-back → management):
 ./scripts/deploy-multi-sub.sh \\
   --connectivity-sub ${answers.connectivity_subscription_id} \\
   --management-sub   ${answers.management_subscription_id} \\
   --landingzone-sub  ${answers.landingzone_subscription_id} \\
+  --scenario ${scenario} \\
   --name-prefix ${answers.name_prefix} \\
   --region ${answers.location} \\
   --region-short ${shortRegion(answers.location)}

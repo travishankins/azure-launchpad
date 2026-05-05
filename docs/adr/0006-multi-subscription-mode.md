@@ -30,21 +30,23 @@ For Bicep, multi-subscription deployment is implemented as **three separate `az 
 ## Consequences
 
 ### Wins
+
 - Existing single-sub customers see zero churn — `deployment_mode = "single"` is the default, all variables backward-compatible.
 - Multi-sub deploys match ALZ guidance: platform isolated from workloads, separate billing/RBAC boundaries per layer, room to grow into per-LZ subs.
 - Plan-mode test asserts both modes still produce the right resource group counts per layer.
 - `Contributor` per sub is enough — no `Owner` at tenant root, no Management Group dependencies.
 
 ### Costs / limits
-- **Bicep multi-sub is baseline-only in v1.** Firewall and VPN scenarios in multi-sub require cross-sub orchestration (spoke route table referencing firewall private IP from another sub, cross-sub PDZ wiring) that didn't fit cleanly into the existing fat modules. Documented as a follow-up. **Terraform multi-sub supports all four scenarios** because provider aliases are first-class.
+
+- **Bicep multi-sub uses a deploy wrapper, not a tenant-scope orchestrator.** All four scenarios (`baseline` / `firewall` / `vpn` / `full`) are supported, but they require multiple `az deployment sub create` calls in order to thread cross-sub references (firewall private IP, hub VNet ID, spoke VNet ID, PDZ ID). The [`scripts/deploy-multi-sub.sh`](../../scripts/deploy-multi-sub.sh) wrapper runs the four steps for you. **Terraform multi-sub does it in a single `apply`** because provider aliases are first-class — pick the stack that matches your team.
 - Cross-sub **VNet peering** requires the principal deploying the spoke side to have `Network Contributor` on the hub VNet in the connectivity sub. Documented in the multi-subscription scenario page.
-- Cross-sub **Private DNS Zone** linking to the spoke VNet (so KV PE name resolution works from spoke workloads) requires `Network Contributor` on the PDZ in the connectivity sub. The Bicep multi-sub flow leaves `keyVaultPdzId` empty by default with a documented manual follow-up; Terraform handles it via the `azurerm.connectivity` alias.
+- Cross-sub **Private DNS Zone** linking to the spoke VNet (so KV PE name resolution works from spoke workloads) requires `Network Contributor` on the PDZ in the connectivity sub. Both stacks now wire this automatically — Terraform via the `azurerm.connectivity` alias, Bicep via the second connectivity-layer pass that the wrapper script triggers.
 - The Wizard now asks **3 subscription IDs instead of 1** when multi-sub is selected. Adds friction, but the answer set is genuinely 3-D.
 - The Terraform state file key includes a `.multi` suffix for multi-sub mode (`foundation.<scenario>.multi.tfstate`) so single and multi state files don't collide for the same scenario.
 
 ## Alternatives considered
 
 - **Hard cut to multi-sub only**: rejected — would force every existing single-sub customer to refactor. The audience starts small.
-- **Separate root modules per layer (no provider aliases)**: rejected for Terraform — would mean three state files and three deploy commands even in single-sub mode. The provider-alias approach lets one apply do everything in single mode while still cleanly splitting in multi mode. *Bicep* uses this pattern (separate templates) precisely because Bicep doesn't have provider aliases.
+- **Separate root modules per layer (no provider aliases)**: rejected for Terraform — would mean three state files and three deploy commands even in single-sub mode. The provider-alias approach lets one apply do everything in single mode while still cleanly splitting in multi mode. _Bicep_ uses this pattern (separate templates) precisely because Bicep doesn't have provider aliases.
 - **Tenant-scope Bicep orchestrator** (`targetScope = 'tenant'`): rejected as the default — requires `Owner` or `Management Group Contributor` at Tenant Root which most SMB principals don't have. Could be added as an advanced option later.
 - **Identity sub** as a fourth layer: deferred — the Identity sub conventionally hosts AD DS / Entra DS, neither of which the foundation deploys today. Adding the variable without resources would be noise.

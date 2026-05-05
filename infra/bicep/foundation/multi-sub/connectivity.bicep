@@ -1,13 +1,13 @@
 // ---------------------------------------------------------------------------
-// Connectivity layer — multi-subscription mode (baseline scenario)
+// Connectivity layer — multi-subscription mode
 // ---------------------------------------------------------------------------
-// v1 supports the BASELINE scenario only (no firewall, no VPN). Multi-sub
-// Bicep deployments for firewall/VPN scenarios require cross-sub
-// orchestration (spoke route table, cross-sub PDZ link) that is documented
-// as a follow-up. For firewall/VPN multi-sub today, use the Terraform path
-// — provider aliases there support all four scenarios.
+// Supports all four scenarios: baseline | firewall | vpn | full.
 //
-// Run: deploy this layer FIRST. Outputs hubVnetId; pass it to landingzone.
+// Run TWICE:
+//   1. First pass (no spokeVnetId)  — creates hub VNet, firewall, VPN, PDZ.
+//      Capture firewallPrivateIp + hubVnetId from outputs.
+//   2. Second pass (with spokeVnetId, after landingzone deploys)
+//      — wires hub->spoke peering AND PDZ->spoke link.
 // ---------------------------------------------------------------------------
 
 targetScope = 'subscription'
@@ -22,7 +22,15 @@ param regionShort string = 'wcus'
 
 param addressSpaceHub string = '10.0.0.0/23'
 
-@description('Spoke VNet resource ID — pass on a SECOND deploy (after the landingzone layer) to wire hub->spoke peering. Leave empty on first deploy.')
+@allowed([
+  'baseline'
+  'firewall'
+  'vpn'
+  'full'
+])
+param scenario string = 'baseline'
+
+@description('Spoke VNet resource ID — pass on the SECOND deploy (after the landingzone layer) to wire hub->spoke peering and PDZ->spoke link. Leave empty on first deploy.')
 param spokeVnetId string = ''
 
 param tags object = {
@@ -34,7 +42,7 @@ param tags object = {
 
 var suffix = '${namePrefix}-${regionShort}'
 var mergedTags = union(tags, {
-  scenario: 'baseline-multi-sub'
+  scenario: '${scenario}-multi-sub'
   location: location
 })
 
@@ -51,6 +59,7 @@ module hub 'connectivity-hub.bicep' = {
     location: location
     suffix: suffix
     addressSpaceHub: addressSpaceHub
+    scenario: scenario
     spokeVnetId: spokeVnetId
     tags: mergedTags
   }
@@ -59,3 +68,5 @@ module hub 'connectivity-hub.bicep' = {
 output hubRgName string = rgHub.name
 output hubVnetId string = hub.outputs.hubVnetId
 output keyVaultPdzId string = hub.outputs.keyVaultPdzId
+output firewallPrivateIp string = hub.outputs.firewallPrivateIp
+output vpnGatewayId string = hub.outputs.vpnGatewayId

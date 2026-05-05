@@ -18,18 +18,18 @@ This page covers **`multi`** mode. For the simpler default, see the rest of the 
 | ---------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Connectivity** | `rg-hub-<suffix>`                                                       | Hub VNet, Azure Firewall (`firewall`/`full`), VPN Gateway (`vpn`/`full`), Private DNS for Key Vault, hub-side peering                                  |
 | **Management**   | `rg-monitor-<suffix>`, `rg-backup-<suffix>`                             | Log Analytics workspace, Automation Account, Recovery Services Vault, optional Foundation Health workbook + subscription budget                        |
-| **Landing-Zone** | `rg-spoke-prod-<suffix>`, `rg-security-<suffix>`, `rg-migrate-<suffix>` | Spoke VNet, NAT Gateway (when no firewall), Key Vault with private endpoint, spoke-side peering, spoke route table (`firewall`/`full` — TF only in v1) |
+| **Landing-Zone** | `rg-spoke-prod-<suffix>`, `rg-security-<suffix>`, `rg-migrate-<suffix>` | Spoke VNet, NAT Gateway (when no firewall) **or** route table → firewall private IP (`firewall`/`full`), Key Vault with private endpoint, spoke-side peering |
 
 ## Coverage matrix
 
-| Scenario   | Terraform multi-sub | Bicep multi-sub                                      |
-| ---------- | ------------------- | ---------------------------------------------------- |
-| `baseline` | ✅                  | ✅                                                   |
-| `firewall` | ✅                  | ⚠️ v1 follow-up (cross-sub spoke route table needed) |
-| `vpn`      | ✅                  | ⚠️ v1 follow-up                                      |
-| `full`     | ✅                  | ⚠️ v1 follow-up                                      |
+| Scenario   | Terraform multi-sub | Bicep multi-sub |
+| ---------- | :-----------------: | :-------------: |
+| `baseline` | ✅                  | ✅              |
+| `firewall` | ✅                  | ✅              |
+| `vpn`      | ✅                  | ✅              |
+| `full`     | ✅                  | ✅              |
 
-If you want firewall or VPN with multi-sub today, use the Terraform path — its provider-alias model handles all four scenarios cleanly.
+Both stacks now support all four scenarios in multi-sub mode. The Bicep path uses the [`scripts/deploy-multi-sub.sh`](https://github.com/travishankins/azure-launchpad/blob/main/scripts/deploy-multi-sub.sh) wrapper to thread cross-sub references (firewall private IP, hub VNet ID, spoke VNet ID, PDZ ID) through the four deploy steps. The Terraform path uses provider aliases (`azurerm.connectivity`, `azurerm.management`, `azurerm.landingzone`) and runs as a single `terraform apply`.
 
 ## Required RBAC
 
@@ -77,30 +77,33 @@ terraform apply -var-file=wizard.auto.tfvars
 
 The provider aliases `azurerm.connectivity`, `azurerm.management`, `azurerm.landingzone` route every resource to its assigned sub. In single-sub mode all three aliases collapse to the same sub.
 
-## Bicep deploy (baseline only in v1)
+## Bicep deploy
 
-The shipped wrapper runs all four steps in order:
+The shipped wrapper runs all four deploy steps in order, threading cross-sub outputs (`hubVnetId`, `firewallPrivateIp`, `spokeVnetId`, `keyVaultPdzId`) between them:
 
 ```bash
 ./scripts/deploy-multi-sub.sh \
   --connectivity-sub <conn-sub> \
   --management-sub   <mgmt-sub> \
   --landingzone-sub  <lz-sub> \
+  --scenario full \
   --name-prefix contoso \
   --region westcentralus \
   --region-short wcus
 ```
 
-Internally it does:
+`--scenario` accepts `baseline`, `firewall`, `vpn`, or `full`. Internally the script does:
 
-1. `az deployment sub create` in **connectivity** sub — hub VNet, no peering yet
-2. `az deployment sub create` in **landing-zone** sub — spoke VNet + spoke→hub peering using hub VNet ID
-3. `az deployment sub create` in **connectivity** sub again — wires hub→spoke peering using spoke VNet ID
-4. `az deployment sub create` in **management** sub — LAW + Automation + RSV (+ optional budget + workbook)
+1. **Connectivity** (first pass) — hub VNet, plus Azure Firewall + policy (`firewall`/`full`) and VPN gateway (`vpn`/`full`). Captures `firewallPrivateIp`, `hubVnetId`, `keyVaultPdzId` from outputs.
+2. **Landing-zone** — spoke VNet + spoke→hub peering. NAT Gateway for `baseline`/`vpn`; route table forwarding `0.0.0.0/0` to the firewall private IP for `firewall`/`full`. Key Vault private endpoint optionally wired to the PDZ in the connectivity sub.
+3. **Connectivity** (second pass) — wires hub→spoke peering AND the cross-sub PDZ→spoke virtual-network link so KV name resolution works from spoke workloads.
+4. **Management** — Log Analytics, Automation Account, Recovery Services Vault (independent of network layers).
+
+> The deploy uses `useRemoteGateways: false` on the spoke side. If you're using `vpn` or `full` and want spoke workloads to reach on-prem through the VPN gateway, flip `useRemoteGateways` to `true` on the spoke peering after the first apply. This is documented as a manual fourth step today; automating it is on the roadmap.
 
 Source files live under [`infra/bicep/foundation/multi-sub/`](https://github.com/travishankins/azure-launchpad/tree/main/infra/bicep/foundation/multi-sub):
 
-- `connectivity.bicep` — sub-scope wrapper that creates `rg-hub` and the hub VNet
+- `connectivity.bicep` — sub-scope wrapper that creates `rg-hub` and the hub VNet (+ firewall / VPN as scenario dictates)
 - `landingzone.bicep` — sub-scope wrapper that creates spoke RGs, spoke VNet, KV
 - `management.bicep` — sub-scope wrapper that creates monitor + backup RGs and their resources
 - `scenarios/*.bicepparam` — example parameter files for each layer

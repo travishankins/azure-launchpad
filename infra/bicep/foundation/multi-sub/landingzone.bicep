@@ -1,17 +1,16 @@
 // ---------------------------------------------------------------------------
-// Landing-zone layer — multi-subscription mode (baseline scenario)
+// Landing-zone layer — multi-subscription mode
 // ---------------------------------------------------------------------------
-// Deploys spoke RG + spoke VNet + NAT Gateway + spoke->hub peering, plus
-// the security RG + Key Vault with a private endpoint into the spoke
-// workload subnet.
+// Supports all four scenarios: baseline | firewall | vpn | full.
 //
-// Cross-sub references:
-// - hubVnetId: from connectivity layer output (used for spoke->hub peering)
-// - keyVaultPdzId: optional. If empty, KV PE is created without PDZ wiring;
-//   you can add a PDZ link from the connectivity sub later.
+// Cross-sub inputs (from the connectivity layer):
+//   - hubVnetId        : required (spoke->hub peering)
+//   - firewallPrivateIp: required for firewall/full (spoke route table)
+//   - keyVaultPdzId    : optional (KV PE wired to PDZ in connectivity sub)
 //
-// Run: deploy SECOND, after connectivity. Then re-deploy connectivity with
-// spokeVnetId from this layer's output to wire hub->spoke peering.
+// Run SECOND, after connectivity. Then re-deploy connectivity with
+// spokeVnetId from this layer's output to wire hub->spoke peering AND
+// PDZ->spoke link.
 // ---------------------------------------------------------------------------
 
 targetScope = 'subscription'
@@ -26,10 +25,21 @@ param regionShort string = 'wcus'
 
 param addressSpaceSpoke string = '10.0.2.0/23'
 
+@allowed([
+  'baseline'
+  'firewall'
+  'vpn'
+  'full'
+])
+param scenario string = 'baseline'
+
 @description('Hub VNet resource ID from the connectivity layer. Required for spoke->hub peering.')
 param hubVnetId string
 
-@description('Private DNS Zone ID for KV (privatelink.vaultcore.azure.net), from the connectivity sub. Leave empty to skip wiring; add manually later.')
+@description('Firewall private IP from the connectivity layer. Required for firewall/full scenarios; leave empty for baseline/vpn.')
+param firewallPrivateIp string = ''
+
+@description('Private DNS Zone ID for KV (privatelink.vaultcore.azure.net), from the connectivity sub. Leave empty to skip wiring.')
 param keyVaultPdzId string = ''
 
 param tags object = {
@@ -41,7 +51,7 @@ param tags object = {
 
 var suffix = '${namePrefix}-${regionShort}'
 var mergedTags = union(tags, {
-  scenario: 'baseline-multi-sub'
+  scenario: '${scenario}-multi-sub'
   location: location
 })
 
@@ -71,6 +81,8 @@ module spoke 'landingzone-spoke.bicep' = {
     suffix: suffix
     addressSpaceSpoke: addressSpaceSpoke
     hubVnetId: hubVnetId
+    scenario: scenario
+    firewallPrivateIp: firewallPrivateIp
     tags: mergedTags
   }
 }

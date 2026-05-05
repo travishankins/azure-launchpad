@@ -1,36 +1,42 @@
 #!/usr/bin/env bash
-# Deploy the multi-subscription (ALZ-aligned) baseline foundation in 3 layers.
+# Deploy the multi-subscription (ALZ-aligned) foundation in 3 layers.
 #
 # Usage:
 #   ./scripts/deploy-multi-sub.sh \
 #       --connectivity-sub <guid> \
 #       --management-sub   <guid> \
 #       --landingzone-sub  <guid> \
+#       [--scenario baseline|firewall|vpn|full] \
 #       [--name-prefix contoso] [--region westcentralus] [--region-short wcus]
 #
 # Order:
-#   1. Connectivity (creates hub VNet)
-#   2. Landing-zone (creates spoke VNet + spoke->hub peering using hubVnetId)
-#   3. Connectivity (re-deploy with spokeVnetId to wire hub->spoke peering)
-#   4. Management (independent — no cross-layer inputs)
+#   1. Connectivity (creates hub VNet, optionally firewall + VPN)
+#   2. Landing-zone (spoke VNet + spoke->hub peering; route table -> firewall
+#      private IP for firewall/full)
+#   3. Connectivity (re-deploy with spokeVnetId — wires hub->spoke peering AND
+#      cross-sub PDZ link to the spoke VNet)
+#   4. Management  (LAW + Automation + RSV + opt-in budget/workbook)
 #
 # Requirements:
 #   - Azure CLI signed in
 #   - Contributor on each subscription
-#   - Network Contributor on the hub VNet from the landing-zone sub principal
-#     (Azure auto-grants this when peering is created cross-sub)
+#   - Network Contributor implicitly required cross-sub for VNet peering and
+#     for the cross-sub PDZ link (Azure auto-grants when the resource is
+#     created from the owning sub)
 #
 set -euo pipefail
 
 NAME_PREFIX="contoso"
 REGION="westcentralus"
 REGION_SHORT="wcus"
+SCENARIO="baseline"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --connectivity-sub) CONN_SUB="$2"; shift 2 ;;
     --management-sub)   MGMT_SUB="$2"; shift 2 ;;
     --landingzone-sub)  LZ_SUB="$2"; shift 2 ;;
+    --scenario)         SCENARIO="$2"; shift 2 ;;
     --name-prefix)      NAME_PREFIX="$2"; shift 2 ;;
     --region)           REGION="$2"; shift 2 ;;
     --region-short)     REGION_SHORT="$2"; shift 2 ;;
@@ -44,62 +50,75 @@ done
 : "${MGMT_SUB:?--management-sub is required}"
 : "${LZ_SUB:?--landingzone-sub is required}"
 
+case "$SCENARIO" in
+  baseline|firewall|vpn|full) ;;
+  *) echo "--scenario must be one of: baseline | firewall | vpn | full" >&2; exit 2 ;;
+esac
+
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BICEP_DIR="$REPO_ROOT/infra/bicep/foundation/multi-sub"
 
 step() { echo; echo "==> $*"; }
 
 # -----------------------------------------------------------------------------
-# 1. Connectivity (first pass) — hub VNet, no peering yet
+# 1. Connectivity (first pass) — hub, firewall, VPN, PDZ; no peering yet
 # -----------------------------------------------------------------------------
-step "[1/4] Deploying connectivity layer to $CONN_SUB"
+step "[1/4] Deploying connectivity layer ($SCENARIO) to $CONN_SUB"
 az account set --subscription "$CONN_SUB"
-HUB_VNET_ID="$(az deployment sub create \
+CONN_OUT="$(az deployment sub create \
   --location "$REGION" \
   --name "azlp-connectivity-$(date +%s)" \
   --template-file "$BICEP_DIR/connectivity.bicep" \
-  --parameters namePrefix="$NAME_PREFIX" regionShort="$REGION_SHORT" location="$REGION" \
-  --query 'properties.outputs.hubVnetId.value' -o tsv)"
-echo "   hubVnetId = $HUB_VNET_ID"
+  --parameters namePrefix="$NAME_PREFIX" regionShort="$REGION_SHORT" location="$REGION" scenario="$SCENARIO" \
+  --query 'properties.outputs' -o json)"
+HUB_VNET_ID="$(echo "$CONN_OUT"  | jq -r '.hubVnetId.value')"
+FW_PRIVATE_IP="$(echo "$CONN_OUT" | jq -r '.firewallPrivateIp.value // ""')"
+PDZ_ID="$(echo "$CONN_OUT"        | jq -r '.keyVaultPdzId.value')"
+echo "   hubVnetId        = $HUB_VNET_ID"
+echo "   firewallPrivateIp= ${FW_PRIVATE_IP:-<none, not a firewall scenario>}"
+echo "   keyVaultPdzId    = $PDZ_ID"
 
 # -----------------------------------------------------------------------------
-# 2. Landing-zone — spoke VNet + spoke->hub peering (cross-sub via hubVnetId)
+# 2. Landing-zone — spoke VNet (NAT or route table) + spoke->hub peering + KV
 # -----------------------------------------------------------------------------
-step "[2/4] Deploying landing-zone layer to $LZ_SUB"
+step "[2/4] Deploying landing-zone layer ($SCENARIO) to $LZ_SUB"
 az account set --subscription "$LZ_SUB"
-SPOKE_VNET_ID="$(az deployment sub create \
+LZ_OUT="$(az deployment sub create \
   --location "$REGION" \
   --name "azlp-landingzone-$(date +%s)" \
   --template-file "$BICEP_DIR/landingzone.bicep" \
-  --parameters namePrefix="$NAME_PREFIX" regionShort="$REGION_SHORT" location="$REGION" hubVnetId="$HUB_VNET_ID" \
-  --query 'properties.outputs.spokeVnetId.value' -o tsv)"
-echo "   spokeVnetId = $SPOKE_VNET_ID"
+  --parameters namePrefix="$NAME_PREFIX" regionShort="$REGION_SHORT" location="$REGION" scenario="$SCENARIO" \
+               hubVnetId="$HUB_VNET_ID" firewallPrivateIp="$FW_PRIVATE_IP" keyVaultPdzId="$PDZ_ID" \
+  --query 'properties.outputs' -o json)"
+SPOKE_VNET_ID="$(echo "$LZ_OUT" | jq -r '.spokeVnetId.value')"
+echo "   spokeVnetId      = $SPOKE_VNET_ID"
 
 # -----------------------------------------------------------------------------
-# 3. Connectivity (second pass) — wire hub->spoke peering
+# 3. Connectivity (second pass) — hub->spoke peering + PDZ->spoke link
 # -----------------------------------------------------------------------------
-step "[3/4] Re-deploying connectivity to wire hub->spoke peering"
+step "[3/4] Re-deploying connectivity to wire hub->spoke peering + PDZ->spoke link"
 az account set --subscription "$CONN_SUB"
 az deployment sub create \
   --location "$REGION" \
   --name "azlp-connectivity-peer-$(date +%s)" \
   --template-file "$BICEP_DIR/connectivity.bicep" \
-  --parameters namePrefix="$NAME_PREFIX" regionShort="$REGION_SHORT" location="$REGION" spokeVnetId="$SPOKE_VNET_ID" \
+  --parameters namePrefix="$NAME_PREFIX" regionShort="$REGION_SHORT" location="$REGION" scenario="$SCENARIO" \
+               spokeVnetId="$SPOKE_VNET_ID" \
   --output none
 
 # -----------------------------------------------------------------------------
-# 4. Management — LAW + Automation + RSV + (opt-in) budget + workbook
+# 4. Management — LAW + Automation + RSV (independent of network layers)
 # -----------------------------------------------------------------------------
-step "[4/4] Deploying management layer to $MGMT_SUB"
+step "[4/4] Deploying management layer ($SCENARIO) to $MGMT_SUB"
 az account set --subscription "$MGMT_SUB"
 az deployment sub create \
   --location "$REGION" \
   --name "azlp-management-$(date +%s)" \
   --template-file "$BICEP_DIR/management.bicep" \
-  --parameters namePrefix="$NAME_PREFIX" regionShort="$REGION_SHORT" location="$REGION" scenario=baseline \
+  --parameters namePrefix="$NAME_PREFIX" regionShort="$REGION_SHORT" location="$REGION" scenario="$SCENARIO" \
   --output none
 
-step "Done. Three subscriptions deployed."
+step "Done. Three subscriptions deployed (scenario=$SCENARIO)."
 echo "  Connectivity: $CONN_SUB"
 echo "  Management:   $MGMT_SUB"
 echo "  Landing-zone: $LZ_SUB"
