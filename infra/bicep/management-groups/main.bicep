@@ -1,4 +1,4 @@
-// Azure Launchpad (SMEC Edition) — Management Groups (Bicep, tenant scope)
+// Azure Launchpad (SMB / SMEC Edition) — Management Groups (Bicep, tenant scope)
 // Functional parity with infra/terraform/management-groups.
 
 targetScope = 'tenant'

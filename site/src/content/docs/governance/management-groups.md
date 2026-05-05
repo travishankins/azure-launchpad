@@ -1,6 +1,6 @@
 ---
 title: Management Groups (optional)
-description: Opt-in ALZ-aligned Management Group hierarchy for Azure Launchpad (SMEC Edition), including the new Local MG.
+description: Opt-in ALZ-aligned Management Group hierarchy for Azure Launchpad (SMB / SMEC Edition), including the new Local MG.
 ---
 
 The core `foundation` module deploys into **one subscription** with no Management Groups (MGs). For most SMB customers that's the right starting point.

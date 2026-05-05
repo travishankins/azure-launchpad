@@ -1,6 +1,6 @@
 ---
 title: Prerequisites
-description: What you need before deploying the Azure Launchpad (SMEC Edition) landing zone.
+description: What you need before deploying the Azure Launchpad (SMB / SMEC Edition) landing zone.
 ---
 
 ## Tooling

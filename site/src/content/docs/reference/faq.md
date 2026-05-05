@@ -1,6 +1,6 @@
 ---
 title: FAQ
-description: Frequently asked questions about Azure Launchpad (SMEC Edition) (Terraform + Bicep).
+description: Frequently asked questions about Azure Launchpad (SMB / SMEC Edition) (Terraform + Bicep).
 ---
 
 ## Picking an IaC platform

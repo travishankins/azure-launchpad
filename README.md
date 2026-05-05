@@ -1,6 +1,6 @@
-# 🚀 Azure Launchpad (SMEC Edition)
+# 🚀 Azure Launchpad (SMB / SMEC Edition)
 
-Opinionated Azure platform foundations for **small and midsized enterprises and corps (SMEC)**. Deploys a hub-spoke landing zone with either **Terraform** (AVM-TF) or **Bicep**. One repo, four cost-tiered scenarios, one command. Includes an opt-in Management Groups + Azure Policy module for ALZ-aligned governance.
+Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** and **small and midsized enterprises and corps (SMEC)** — aligned with the Microsoft Cloud Adoption Framework (CAF) and Azure Landing Zone (ALZ) guidance, sized so a small platform team can actually own it. Deploys a hub-spoke topology with either **Terraform** (AVM-TF) or **Bicep**. One repo, four cost-tiered scenarios, one command. Includes an opt-in Management Groups + Azure Policy module for ALZ-aligned governance.
 
 ## Scenarios
 

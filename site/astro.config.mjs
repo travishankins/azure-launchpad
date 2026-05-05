@@ -11,7 +11,7 @@ export default defineConfig({
   base: process.env.SITE_BASE ?? `/${REPO}/`,
   integrations: [
     starlight({
-      title: '🚀 Azure Launchpad (SMEC Edition)',
+      title: '🚀 Azure Launchpad (SMB / SMEC Edition)',
       description:
         'Deploy a hub-spoke Azure landing zone with either Terraform or Bicep, plus an interactive deployment wizard.',
       social: {

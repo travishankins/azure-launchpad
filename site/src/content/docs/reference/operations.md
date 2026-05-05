@@ -1,6 +1,6 @@
 ---
 title: Operations & teardown
-description: Day-2 operations for a deployed Azure Launchpad (SMEC Edition) landing zone.
+description: Day-2 operations for a deployed Azure Launchpad (SMB / SMEC Edition) landing zone.
 ---
 
 ## Verify the deployment

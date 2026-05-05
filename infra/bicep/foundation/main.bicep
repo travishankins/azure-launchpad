@@ -1,4 +1,4 @@
-// Azure Launchpad (SMEC Edition) — foundation root (Bicep)
+// Azure Launchpad (SMB / SMEC Edition) — foundation root (Bicep)
 // Functional parity with infra/terraform/foundation.
 //
 // Deploys hub-spoke networking, optional Azure Firewall (Basic), optional VPN

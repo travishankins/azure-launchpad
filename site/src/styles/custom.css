@@ -1,4 +1,4 @@
-/* Azure Launchpad (SMEC Edition) — site customizations */
+/* Azure Launchpad (SMB / SMEC Edition) — site customizations */
 
 :root {
   --sl-color-accent-low: #0b3d91;
@@ -43,7 +43,7 @@
   border: 1px solid var(--sl-color-gray-5);
   border-radius: 0.5rem;
   padding: 1rem 1.25rem;
-  background: var(--sl-color-gray-7, #fafafa);
+  background: var(--sl-color-bg-nav, var(--sl-color-gray-7, #fafafa));
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -81,7 +81,7 @@
   border-radius: 0.75rem;
   padding: 1.5rem;
   margin: 1.5rem 0;
-  background: var(--sl-color-gray-7, #fafafa);
+  background: var(--sl-color-bg-nav, var(--sl-color-gray-7, #fafafa));
 }
 
 .wizard label {
@@ -279,3 +279,44 @@
 }
 
 .hidden { display: none !important; }
+
+/* ---------------------------------------------------------------------------
+ * Dark-mode surface overrides
+ *
+ * Starlight's `--sl-color-gray-7` is a near-white surface in light mode and a
+ * near-black surface in dark mode, but the legacy `#fafafa` fallback used in
+ * older rules can leak through. Pin scenario cards, the wizard shell, and
+ * wizard input chrome to surfaces that adapt for both themes.
+ * ------------------------------------------------------------------------- */
+:root[data-theme='dark'] .scenario-card,
+:root[data-theme='dark'] .wizard {
+  background: var(--sl-color-black, #17181c);
+  border-color: var(--sl-color-gray-5);
+}
+
+:root[data-theme='dark'] .wizard .opt,
+:root[data-theme='dark'] .wizard input[type="text"],
+:root[data-theme='dark'] .wizard select {
+  background: var(--sl-color-bg, #0c0d10);
+  color: var(--sl-color-text);
+  border-color: var(--sl-color-gray-5);
+}
+
+:root[data-theme='dark'] .wizard .opt:hover,
+:root[data-theme='dark'] .wizard .actions button.secondary:hover {
+  background: var(--sl-color-gray-6, rgba(255, 255, 255, 0.04));
+}
+
+:root[data-theme='dark'] .wizard .verdict,
+:root[data-theme='dark'] .wizard .wizard-impact code {
+  background: var(--sl-color-black, #17181c);
+}
+
+:root[data-theme='dark'] .wizard .wizard-impact,
+:root[data-theme='dark'] .wizard-privacy {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme='dark'] .wizard .wizard-secret-warning {
+  background: rgba(212, 160, 23, 0.12);
+}

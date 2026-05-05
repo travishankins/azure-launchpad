@@ -1,6 +1,6 @@
 ---
 title: Compare scenarios
-description: Pick the right Azure Launchpad (SMEC Edition) landing zone scenario for your customer.
+description: Pick the right Azure Launchpad (SMB / SMEC Edition) landing zone scenario for your customer.
 ---
 
 Every scenario shares the same hub-spoke topology. You only add what the customer actually needs.

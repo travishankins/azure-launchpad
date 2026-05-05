@@ -1,6 +1,6 @@
 ---
 title: Architecture
-description: Hub-spoke topology shared by all Azure Launchpad (SMEC Edition) scenarios.
+description: Hub-spoke topology shared by all Azure Launchpad (SMB / SMEC Edition) scenarios.
 ---
 
 All four scenarios share the same hub-spoke topology and naming. The diagrams below show what changes between them.
