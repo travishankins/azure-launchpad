@@ -15,12 +15,16 @@ body:
     attributes:
       label: Affected area
       options:
-        - Terraform module
-        - Bicep module
+        - Terraform module (foundation)
+        - Terraform module (management-groups)
+        - Bicep module (foundation single-sub)
+        - Bicep module (foundation multi-sub)
+        - Multi-sub wrapper script (scripts/deploy-multi-sub.sh)
+        - Bootstrap script (scripts/bootstrap-state.sh)
         - Wizard (site/public/scripts/wizard.js)
         - Docs site content
         - CI / GitHub Actions
-        - Bootstrap script
+        - Dev container
         - Other
     validations:
       required: true
@@ -34,6 +38,18 @@ body:
         - vpn
         - full
         - management-groups
+        - n/a
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment-mode
+    attributes:
+      label: Deployment mode (if foundation-related)
+      description: Multi-sub failures often trace back to cross-sub RBAC or peering
+        ordering — picking the right mode helps us triage faster.
+      options:
+        - single (default)
+        - multi (ALZ-aligned, 3 subscriptions)
         - n/a
     validations:
       required: true

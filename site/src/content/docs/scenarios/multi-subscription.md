@@ -5,10 +5,10 @@ description: ALZ-aligned deployment of the Azure Launchpad foundation across Con
 
 The foundation deploys in one of two modes:
 
-| Mode         | Subs | Best for                                                                                |
-| ------------ | :--: | --------------------------------------------------------------------------------------- |
-| **single**   |  1   | The SMB starter. Everything lands in one subscription. **This is the default.**         |
-| **multi**    |  3   | ALZ-aligned platform/workload separation: Connectivity / Management / Landing-Zone subs |
+| Mode       | Subs | Best for                                                                                |
+| ---------- | :--: | --------------------------------------------------------------------------------------- |
+| **single** |  1   | The SMB starter. Everything lands in one subscription. **This is the default.**         |
+| **multi**  |  3   | ALZ-aligned platform/workload separation: Connectivity / Management / Landing-Zone subs |
 
 This page covers `multi` mode end-to-end: when to pick it, how the layers split, the cross-subscription wiring under the hood, the deploy workflow for both Terraform and Bicep, verification, and day-2 operations. Every other page in this site assumes single-sub — read those first if you're not sure which mode you want.
 
@@ -16,14 +16,14 @@ This page covers `multi` mode end-to-end: when to pick it, how the layers split,
 
 ## Should you use multi-sub mode?
 
-| Pick `single` if…                                                              | Pick `multi` if…                                                                                      |
-| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| You have one Azure subscription today                                          | You already have (or can create) three subscriptions                                                  |
-| Your team is one or two engineers wearing every hat                            | You have a clear split between platform owners and workload owners                                    |
-| You don't need separate billing for networking vs workloads                    | You want per-layer chargeback (cost center per sub)                                                   |
-| You're deploying for a single tenant / single business unit                    | You're standing up a foundation that other teams will land workloads into                             |
-| You don't want to think about cross-sub RBAC                                   | You're comfortable granting `Contributor` on each sub and `Network Contributor` for cross-sub peering |
-| You want the simplest possible migration / teardown story                      | You want a foundation you can grow into Microsoft's ALZ over the next 12–24 months                    |
+| Pick `single` if…                                           | Pick `multi` if…                                                                                      |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| You have one Azure subscription today                       | You already have (or can create) three subscriptions                                                  |
+| Your team is one or two engineers wearing every hat         | You have a clear split between platform owners and workload owners                                    |
+| You don't need separate billing for networking vs workloads | You want per-layer chargeback (cost center per sub)                                                   |
+| You're deploying for a single tenant / single business unit | You're standing up a foundation that other teams will land workloads into                             |
+| You don't want to think about cross-sub RBAC                | You're comfortable granting `Contributor` on each sub and `Network Contributor` for cross-sub peering |
+| You want the simplest possible migration / teardown story   | You want a foundation you can grow into Microsoft's ALZ over the next 12–24 months                    |
 
 **There is no architectural penalty for starting in `single` mode.** The same Bicep and Terraform code paths run in both modes — multi just routes resources to different subscriptions. If you outgrow single-sub, see [Migrating from single → multi](#migrating-from-single--multi) below.
 
@@ -82,7 +82,7 @@ Microsoft's full ALZ reference adds an **Identity** sub (AD DS / Entra DS) and p
 Cross-subscription wires are the only thing that distinguishes multi-sub from single-sub:
 
 1. **Spoke → Hub VNet peering** — created in the landing-zone sub, references the hub VNet ID in the connectivity sub.
-2. **Hub → Spoke VNet peering** — created in the connectivity sub on a *second pass*, after the spoke exists.
+2. **Hub → Spoke VNet peering** — created in the connectivity sub on a _second pass_, after the spoke exists.
 3. **Spoke route table → Firewall private IP** (`firewall` / `full`) — route table lives in the landing-zone sub; the next-hop IP belongs to the firewall in the connectivity sub.
 4. **Private DNS Zone → Spoke VNet link** — the PDZ for `privatelink.vaultcore.azure.net` lives in the connectivity sub; the link to the spoke VNet is created on the second connectivity pass.
 5. **LAW diagnostics** — every resource that emits diagnostic logs targets the LAW resource ID in the management sub.
@@ -95,7 +95,7 @@ Cross-subscription wires are the only thing that distinguishes multi-sub from si
 | **Management**   | `rg-monitor-<suffix>`, `rg-backup-<suffix>`                             | Log Analytics workspace, Automation Account, Recovery Services Vault, optional Foundation Health workbook, optional subscription budget                            |
 | **Landing-Zone** | `rg-spoke-prod-<suffix>`, `rg-security-<suffix>`, `rg-migrate-<suffix>` | Spoke VNet, NAT Gateway (`baseline`/`vpn`) **or** route table → firewall private IP (`firewall`/`full`), Key Vault + private endpoint, spoke-side peering          |
 
-Resource group counts are the same across all four scenarios — only the resources *inside* the connectivity and landing-zone groups change:
+Resource group counts are the same across all four scenarios — only the resources _inside_ the connectivity and landing-zone groups change:
 
 | Layer        | RG count |
 | ------------ | :------: |
@@ -140,12 +140,12 @@ done
 
 ### RBAC
 
-| Principal needs       | Scope                                                | Why                                                                       |
-| --------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------- |
-| `Contributor`         | Each of the three subscriptions                      | Create RGs and resources in every layer                                   |
-| `Network Contributor` | Hub VNet in the connectivity sub (or its parent RG)  | Required to create the hub-side peering from the second connectivity pass |
-| `Network Contributor` | KV Private DNS Zone in the connectivity sub          | Required to create the cross-sub `link-spoke` on the second connectivity pass |
-| `Network Contributor` | Spoke VNet in the landing-zone sub                   | Required to create the spoke-side peering during the landing-zone deploy  |
+| Principal needs       | Scope                                               | Why                                                                           |
+| --------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `Contributor`         | Each of the three subscriptions                     | Create RGs and resources in every layer                                       |
+| `Network Contributor` | Hub VNet in the connectivity sub (or its parent RG) | Required to create the hub-side peering from the second connectivity pass     |
+| `Network Contributor` | KV Private DNS Zone in the connectivity sub         | Required to create the cross-sub `link-spoke` on the second connectivity pass |
+| `Network Contributor` | Spoke VNet in the landing-zone sub                  | Required to create the spoke-side peering during the landing-zone deploy      |
 
 There is **no tenant-root requirement**. No `Owner`, no `Management Group Contributor`, no Tenant Root assignment. If your CI principal is the same identity that runs all four steps (which is the common case), the only RBAC you actually have to set is `Contributor` on each sub — Azure auto-grants the cross-sub Network Contributor for resources the principal creates.
 
@@ -153,21 +153,21 @@ There is **no tenant-root requirement**. No `Owner`, no `Management Group Contri
 
 In the deploy region, confirm the following per-sub quotas are not exhausted:
 
-| Sub          | Resource                       | Default quota | Used by                                |
-| ------------ | ------------------------------ | :-----------: | -------------------------------------- |
-| Connectivity | `Standard PIP`                 |      10       | 1–3 PIPs (firewall + VPN)              |
-| Connectivity | `Azure Firewall (Basic)`       |       1       | 1 if `firewall`/`full`                 |
-| Connectivity | `Virtual Network Gateway`      |       1       | 1 if `vpn`/`full`                      |
-| Landing-Zone | `Standard PIP`                 |      10       | 1 NAT PIP if `baseline`/`vpn`          |
-| Landing-Zone | `NAT Gateway`                  |       1       | 1 if `baseline`/`vpn`                  |
-| Management   | `Log Analytics workspace`      |      10       | 1                                      |
-| Management   | `Recovery Services Vault`      |       5       | 1                                      |
+| Sub          | Resource                  | Default quota | Used by                       |
+| ------------ | ------------------------- | :-----------: | ----------------------------- |
+| Connectivity | `Standard PIP`            |      10       | 1–3 PIPs (firewall + VPN)     |
+| Connectivity | `Azure Firewall (Basic)`  |       1       | 1 if `firewall`/`full`        |
+| Connectivity | `Virtual Network Gateway` |       1       | 1 if `vpn`/`full`             |
+| Landing-Zone | `Standard PIP`            |      10       | 1 NAT PIP if `baseline`/`vpn` |
+| Landing-Zone | `NAT Gateway`             |       1       | 1 if `baseline`/`vpn`         |
+| Management   | `Log Analytics workspace` |      10       | 1                             |
+| Management   | `Recovery Services Vault` |       5       | 1                             |
 
 ### Network plan
 
 The defaults assume non-overlapping `/23`s:
 
-- Hub:   `10.0.0.0/23`
+- Hub: `10.0.0.0/23`
 - Spoke: `10.0.2.0/23`
 
 Override via `addressSpaceHub` / `addressSpaceSpoke` (Bicep) or `address_space_hub` / `address_space_spoke` (Terraform) if you have an existing on-prem schema to fit into.

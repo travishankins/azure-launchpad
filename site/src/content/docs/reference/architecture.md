@@ -14,16 +14,16 @@ All four scenarios share the same hub-spoke topology and naming. The diagrams be
 
 ## Scenarios at a glance
 
-| Capability                         | baseline | firewall | vpn | full |
-| ---------------------------------- | :------: | :------: | :-: | :--: |
-| Hub + spoke VNets + peering        |    ✅    |    ✅    | ✅  |  ✅  |
-| Spoke egress via NAT Gateway       |    ✅    |    —     | ✅  |  —   |
-| Spoke egress via Azure Firewall    |    —     |    ✅    | —   |  ✅  |
-| Route Table 0/0 → firewall private IP |  —    |    ✅    | —   |  ✅  |
-| VPN Gateway (S2S to on-prem)       |    —     |    —     | ✅  |  ✅  |
-| Gateway transit on peering         |    —     |    —     | ✅  |  ✅  |
-| Key Vault + Private Endpoint       |    ✅    |    ✅    | ✅  |  ✅  |
-| Log Analytics + Automation + RSV   |    ✅    |    ✅    | ✅  |  ✅  |
+| Capability                            | baseline | firewall | vpn | full |
+| ------------------------------------- | :------: | :------: | :-: | :--: |
+| Hub + spoke VNets + peering           |    ✅    |    ✅    | ✅  |  ✅  |
+| Spoke egress via NAT Gateway          |    ✅    |    —     | ✅  |  —   |
+| Spoke egress via Azure Firewall       |    —     |    ✅    |  —  |  ✅  |
+| Route Table 0/0 → firewall private IP |    —     |    ✅    |  —  |  ✅  |
+| VPN Gateway (S2S to on-prem)          |    —     |    —     | ✅  |  ✅  |
+| Gateway transit on peering            |    —     |    —     | ✅  |  ✅  |
+| Key Vault + Private Endpoint          |    ✅    |    ✅    | ✅  |  ✅  |
+| Log Analytics + Automation + RSV      |    ✅    |    ✅    | ✅  |  ✅  |
 
 ## Baseline
 

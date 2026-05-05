@@ -25,7 +25,7 @@ Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** 
 - Azure CLI logged in (`az login`) with permissions to create resources in the target subscription
 - For `vpn`/`full`: the on-premises address space (CIDR list)
 
-> 💡 **Skip the local install** by opening the repo in [GitHub Codespaces](https://codespaces.new/travishankins/azure-launchpad) or *VS Code → Reopen in Container*. The shipped [`.devcontainer`](./.devcontainer/devcontainer.json) preinstalls Terraform 1.14, Azure CLI + Bicep, Node 20, GitHub CLI, pre-commit, and `just` — just `az login` and you're ready to deploy.
+> 💡 **Skip the local install** by opening the repo in [GitHub Codespaces](https://codespaces.new/travishankins/azure-launchpad) or _VS Code → Reopen in Container_. The shipped [`.devcontainer`](./.devcontainer/devcontainer.json) preinstalls Terraform 1.14, Azure CLI + Bicep, Node 20, GitHub CLI, pre-commit, and `just` — just `az login` and you're ready to deploy.
 
 ## Quick start
 

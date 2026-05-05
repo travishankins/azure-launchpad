@@ -14,9 +14,11 @@ body:
       options:
         - New Terraform / Bicep module
         - New scenario
+        - Multi-subscription (multi-sub mode)
         - Wizard improvement
         - Docs / site improvement
         - CI / tooling
+        - Dev container
         - Governance (Management Groups, policies, budgets)
         - Other
     validations:

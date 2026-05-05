@@ -7,7 +7,7 @@ The **Foundation Health workbook** is a starter [Azure Monitor workbook](https:/
 
 It's **opt-in** and **off by default** — the workbook resource itself is free, but the queries inside it run against your LAW data. That data is already paid for by the foundation, but the workbook may surface ingestion you didn't realise you had.
 
-> **TL;DR.** Set `workbook_enabled = true` (Terraform) or `workbookEnabled = true` (Bicep), redeploy, then open *Azure Monitor → Workbooks → Foundation Health* in the portal. Works in both `single` and `multi` deployment modes (it lands in the management sub in multi-sub mode).
+> **TL;DR.** Set `workbook_enabled = true` (Terraform) or `workbookEnabled = true` (Bicep), redeploy, then open _Azure Monitor → Workbooks → Foundation Health_ in the portal. Works in both `single` and `multi` deployment modes (it lands in the management sub in multi-sub mode).
 
 ## Where it lands
 
@@ -31,12 +31,12 @@ In `multi` mode, the workbook lands in the **management** sub — the same sub t
 
 One `Microsoft.Insights/workbooks` resource (`kind: shared`) in `rg-monitor-<prefix>-<region>`, with four tabs and a `TimeRange` parameter at the top that lets you pivot from 1h to 7d.
 
-| Tab                      | KQL source                                          | Empty when…                                           | What to look for                                         |
-| ------------------------ | --------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------- |
-| **Workspace ingestion**  | `Usage` table grouped by `DataType`                 | Brand-new LAW (give it ~15 min)                       | Which diagnostic settings are actually emitting GB/day  |
-| **Firewall denies**      | `AZFWNetworkRule` where `Action == "Deny"`          | `baseline` / `vpn` (no firewall)                      | Top denied src/dst — usually misconfigured app rules    |
-| **Key Vault operations** | `AzureDiagnostics` filtered to `MICROSOFT.KEYVAULT` | KV diag setting wasn't auto-applied (rare)            | Last 50 ops with caller — useful for audit + RCA        |
-| **Backup job status**    | `AddonAzureBackupJobs` summarised by `JobStatus`    | No backup item is being protected yet                 | Job success rate over the time window                   |
+| Tab                      | KQL source                                          | Empty when…                                | What to look for                                       |
+| ------------------------ | --------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------ |
+| **Workspace ingestion**  | `Usage` table grouped by `DataType`                 | Brand-new LAW (give it ~15 min)            | Which diagnostic settings are actually emitting GB/day |
+| **Firewall denies**      | `AZFWNetworkRule` where `Action == "Deny"`          | `baseline` / `vpn` (no firewall)           | Top denied src/dst — usually misconfigured app rules   |
+| **Key Vault operations** | `AzureDiagnostics` filtered to `MICROSOFT.KEYVAULT` | KV diag setting wasn't auto-applied (rare) | Last 50 ops with caller — useful for audit + RCA       |
+| **Backup job status**    | `AddonAzureBackupJobs` summarised by `JobStatus`    | No backup item is being protected yet      | Job success rate over the time window                  |
 
 ## Why opt-in?
 
@@ -103,13 +103,13 @@ The easiest workflow:
 
 Common additions teams reach for once they've enabled the starter:
 
-| Add a tab for…             | KQL starting point                                                                                  |
-| -------------------------- | --------------------------------------------------------------------------------------------------- |
-| Firewall **app** rule hits | `AZFWApplicationRule \| summarize count() by Fqdn, Action`                                          |
-| NSG flow log denies        | `AzureNetworkAnalytics_CL \| where SubType_s == "FlowLog" and FlowStatus_s == "D"`                  |
-| Heartbeat misses           | `Heartbeat \| summarize LastSeen=max(TimeGenerated) by Computer \| where LastSeen < ago(15m)`       |
-| Sign-in failures (Entra)   | `SigninLogs \| where ResultType != 0` *(requires Entra → LAW diagnostic setting; not deployed here)* |
-| Cost anomaly               | `AzureActivity \| where OperationNameValue startswith "MICROSOFT.CONSUMPTION/BUDGETS"`              |
+| Add a tab for…             | KQL starting point                                                                                   |
+| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Firewall **app** rule hits | `AZFWApplicationRule \| summarize count() by Fqdn, Action`                                           |
+| NSG flow log denies        | `AzureNetworkAnalytics_CL \| where SubType_s == "FlowLog" and FlowStatus_s == "D"`                   |
+| Heartbeat misses           | `Heartbeat \| summarize LastSeen=max(TimeGenerated) by Computer \| where LastSeen < ago(15m)`        |
+| Sign-in failures (Entra)   | `SigninLogs \| where ResultType != 0` _(requires Entra → LAW diagnostic setting; not deployed here)_ |
+| Cost anomaly               | `AzureActivity \| where OperationNameValue startswith "MICROSOFT.CONSUMPTION/BUDGETS"`               |
 
 The repo only ships the four core tabs to keep the starter readable. Add tabs in the portal, then export.
 
@@ -125,7 +125,7 @@ The plan-mode tests cover the disabled-by-default and enabled paths without need
 
 ## Troubleshooting
 
-### Workbook doesn't appear in *Azure Monitor → Workbooks*
+### Workbook doesn't appear in _Azure Monitor → Workbooks_
 
 It does deploy as `kind: shared` (visible to anyone with `Reader` on the RG). Check **Workbooks → Browse → Subscription filter** — the workbook lives in the management sub in multi-sub mode, not the connectivity or landing-zone sub.
 

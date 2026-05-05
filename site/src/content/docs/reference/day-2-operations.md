@@ -64,14 +64,14 @@ In multi-sub mode, run each `az` command after `az account set --subscription` f
 
 The Log Analytics workspace is created but **no diagnostic settings are wired up automatically** (you can hit per-resource limits if you blanket-attach everything). Add them to the resources you actually care about. Common targets:
 
-| Resource              | Categories                                                                       |
-| --------------------- | -------------------------------------------------------------------------------- |
-| Azure Firewall        | `AzureFirewallApplicationRule`, `AzureFirewallNetworkRule`, `AzureFirewallDnsProxy` |
-| VPN Gateway           | `GatewayDiagnosticLog`, `TunnelDiagnosticLog`, `IKEDiagnosticLog`                |
-| Key Vault             | `AuditEvent`, `AzurePolicyEvaluationDetails`                                     |
-| NAT Gateway           | `AllMetrics`                                                                     |
-| Network Security Group| `NetworkSecurityGroupEvent`, `NetworkSecurityGroupRuleCounter`                   |
-| Recovery Services Vault | `AzureBackupReport`, `AzureSiteRecoveryJobs`                                   |
+| Resource                | Categories                                                                          |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| Azure Firewall          | `AzureFirewallApplicationRule`, `AzureFirewallNetworkRule`, `AzureFirewallDnsProxy` |
+| VPN Gateway             | `GatewayDiagnosticLog`, `TunnelDiagnosticLog`, `IKEDiagnosticLog`                   |
+| Key Vault               | `AuditEvent`, `AzurePolicyEvaluationDetails`                                        |
+| NAT Gateway             | `AllMetrics`                                                                        |
+| Network Security Group  | `NetworkSecurityGroupEvent`, `NetworkSecurityGroupRuleCounter`                      |
+| Recovery Services Vault | `AzureBackupReport`, `AzureSiteRecoveryJobs`                                        |
 
 **Where to add them:**
 
@@ -120,15 +120,15 @@ For a per-sub guardrail, see the [Budgets](/azure-launchpad/governance/budgets/)
 
 A few things you'll want to do periodically once the foundation is in steady state:
 
-| Task                                | Cadence | How                                                                          |
-| ----------------------------------- | ------- | ---------------------------------------------------------------------------- |
-| `terraform plan` drift detection    | Weekly  | CI (see [CI/CD pipeline](/azure-launchpad/reference/cicd/)) or manual        |
-| Bicep what-if drift detection       | Weekly  | `az deployment sub what-if --template-file ... --parameters ...`             |
-| Firewall rule review                | Monthly | KQL: `AZFWApplicationRule \| summarize count() by Fqdn, Action`              |
-| Soft-deleted KV cleanup             | Monthly | `az keyvault list-deleted -o table` then `az keyvault purge` once safe       |
-| Cost review                         | Monthly | Cost Management with `scenario` / `workload` group-by                        |
-| Provider re-registration            | On Azure announcement | `az provider register --namespace <ns> --wait`                  |
-| Module / provider version bumps     | Quarterly | Edit `terraform.tf` (provider versions) / `terraform.lock.hcl`             |
+| Task                             | Cadence               | How                                                                    |
+| -------------------------------- | --------------------- | ---------------------------------------------------------------------- |
+| `terraform plan` drift detection | Weekly                | CI (see [CI/CD pipeline](/azure-launchpad/reference/cicd/)) or manual  |
+| Bicep what-if drift detection    | Weekly                | `az deployment sub what-if --template-file ... --parameters ...`       |
+| Firewall rule review             | Monthly               | KQL: `AZFWApplicationRule \| summarize count() by Fqdn, Action`        |
+| Soft-deleted KV cleanup          | Monthly               | `az keyvault list-deleted -o table` then `az keyvault purge` once safe |
+| Cost review                      | Monthly               | Cost Management with `scenario` / `workload` group-by                  |
+| Provider re-registration         | On Azure announcement | `az provider register --namespace <ns> --wait`                         |
+| Module / provider version bumps  | Quarterly             | Edit `terraform.tf` (provider versions) / `terraform.lock.hcl`         |
 
 ## 6. Teardown
 

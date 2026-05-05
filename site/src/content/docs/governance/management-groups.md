@@ -74,14 +74,14 @@ subscription_placements = {
 
 Use `online` instead of `corp` for the landing-zone sub if it hosts internet-facing workloads with no on-prem dependency, or `local` if it's an Azure Local edge sub. For multiple landing zones, place each LZ sub under whichever of `corp` / `online` / `local` matches its connectivity model.
 
-| Foundation layer | Default MG | Why                                                     |
-| ---------------- | ---------- | ------------------------------------------------------- |
-| Connectivity     | `connectivity` | Inherits `Connectivity` policy initiative + RBAC    |
-| Management       | `management`   | Inherits `Management` policy initiative + RBAC      |
-| Landing-Zone     | `corp`         | Default for workloads with hub-routed connectivity  |
-| (future) Identity | `identity`    | Requires `enable_identity_mg = true`                |
+| Foundation layer  | Default MG     | Why                                                |
+| ----------------- | -------------- | -------------------------------------------------- |
+| Connectivity      | `connectivity` | Inherits `Connectivity` policy initiative + RBAC   |
+| Management        | `management`   | Inherits `Management` policy initiative + RBAC     |
+| Landing-Zone      | `corp`         | Default for workloads with hub-routed connectivity |
+| (future) Identity | `identity`     | Requires `enable_identity_mg = true`               |
 
-> **Order of operations.** Deploy `foundation` *first*, then `management-groups`. Moving a sub under an MG is non-disruptive — it doesn't touch resources, just changes the parent for inheritance. You can also flip the order if you prefer policies in place before workloads land.
+> **Order of operations.** Deploy `foundation` _first_, then `management-groups`. Moving a sub under an MG is non-disruptive — it doesn't touch resources, just changes the parent for inheritance. You can also flip the order if you prefer policies in place before workloads land.
 
 ## Subscription placement reference
 
