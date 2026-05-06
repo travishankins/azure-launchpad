@@ -15,7 +15,7 @@ export ARM_SUBSCRIPTION_ID=<subscription-id>
 ./scripts/bootstrap-state.sh
 ```
 
-Copy the `storage_account_name` printed at the end.
+The script selects `ARM_SUBSCRIPTION_ID` if it is set, creates the backend resources, and prints the exact backend values to use next. Copy the printed `storage_account_name`.
 
 ## 2. Initialize Terraform
 
@@ -55,6 +55,7 @@ That's it. To switch scenarios:
 
 ```bash
 terraform workspace select -or-create firewall
+terraform plan -var "subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/firewall.tfvars
 terraform apply -var "subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/firewall.tfvars
 ```
 

@@ -23,7 +23,7 @@ Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** 
 
 - Terraform `>= 1.9`
 - Azure CLI logged in (`az login`) with permissions to create resources in the target subscription
-- For `vpn`/`full`: the on-premises address space (CIDR list)
+- For post-deploy site-to-site VPN wiring: the customer VPN peer IP, shared key handling, and on-premises CIDRs
 
 > 💡 **Skip the local install** by opening the repo in [GitHub Codespaces](https://codespaces.new/travishankins/azure-launchpad) or _VS Code → Reopen in Container_. The shipped [`.devcontainer`](./.devcontainer/devcontainer.json) preinstalls Terraform 1.14, Azure CLI + Bicep, Node 20, GitHub CLI, pre-commit, and `just` — just `az login` and you're ready to deploy.
 
@@ -56,6 +56,7 @@ Switch scenarios by selecting the matching workspace and `-var-file`:
 
 ```bash
 terraform workspace select -or-create firewall
+terraform plan  -var="subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/firewall.tfvars
 terraform apply -var="subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/firewall.tfvars
 ```
 

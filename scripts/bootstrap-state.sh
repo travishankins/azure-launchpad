@@ -7,6 +7,11 @@ LOCATION="${LOCATION:-westcentralus}"
 PREFIX="${PREFIX:-contoso}"
 REGION_SHORT="${REGION_SHORT:-wcus}"
 RG_NAME="${RG_NAME:-rg-tfstate-${PREFIX}-${REGION_SHORT}}"
+
+if [[ -n "${ARM_SUBSCRIPTION_ID:-}" ]]; then
+  az account set --subscription "${ARM_SUBSCRIPTION_ID}"
+fi
+
 # Storage account names are globally unique, 3-24 lowercase alphanumerics.
 # Append a stable hash of the subscription id to avoid collisions.
 SUB_ID="$(az account show --query id -o tsv)"
