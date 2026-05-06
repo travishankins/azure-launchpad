@@ -278,7 +278,7 @@ The README costs are **resource-only**, in `westcentralus`, with **no traffic, n
 - **Public IPs** — Standard SKU public IPs cost ~$3.65/mo each even when idle. The firewall and VPN scenarios add 2.
 - **Backup retention** — RSV deploys with no policy by default; if you've added a policy, retained snapshots are billable.
 
-Set up cost alerts (or use the upcoming `budgets` module — see [the roadmap](https://github.com/travishankins/azure-launchpad/issues)).
+Set up cost alerts, or enable the built-in [budgets module](/governance/budgets/) (`budget_enabled = true` in Terraform, `budgetEnabled: true` in Bicep) for monthly spend caps with email notifications at 50/80/100%.
 
 ## Still stuck?
 

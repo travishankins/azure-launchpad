@@ -138,4 +138,27 @@ A healthy tunnel reports `connectionStatus: Connected` and non-zero byte counter
 
 ## Rotating the PSK
 
-Re-run `terraform apply` (or `az deployment group create`) with a new `shared_key` / `sharedKey` value. The connection updates in place; existing tunnels rekey on the next IKE renegotiation.
+Update the secret in Key Vault, then re-apply with the new value. The connection updates in place; existing tunnels rekey on the next IKE renegotiation.
+
+**Terraform:**
+
+```bash
+cd examples/vpn-connection/terraform
+terraform apply \
+  -var "subscription_id=$ARM_SUBSCRIPTION_ID" \
+  -var "vpn_gateway_id=$(terraform -chdir=../../../infra/terraform/foundation output -raw vpn_gateway_id)" \
+  -var "peer_ip=203.0.113.10" \
+  -var 'peer_address_spaces=["10.100.0.0/16"]' \
+  -var "shared_key=$(az keyvault secret show --vault-name <kv-name> --name vpn-psk --query value -o tsv)"
+```
+
+**Bicep:**
+
+```bash
+az deployment group create \
+  --resource-group "$VPN_RG" \
+  --template-file examples/vpn-connection/bicep/main.bicep \
+  --parameters examples/vpn-connection/bicep/main.bicepparam \
+  --parameters vpnGatewayId="$VPN_GW_ID" \
+               sharedKey="$(az keyvault secret show --vault-name <kv-name> --name vpn-psk --query value -o tsv)"
+```
