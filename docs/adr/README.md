@@ -12,7 +12,7 @@ Format: lightweight [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/d
 | 0002 | [Pin Azure Verified Modules to exact versions](0002-pin-avm-versions.md)              | Accepted |
 | 0003 | [Azure Firewall Basic as the default SKU](0003-firewall-basic-default.md)             | Accepted |
 | 0004 | [Management Groups are an opt-in second module](0004-management-groups-opt-in.md)     | Accepted |
-| 0005 | [Astro `base: '/azure-launchpad/'` for GitHub Pages hosting](0005-astro-base-path.md) | Accepted |
+| 0005 | [Astro `base: '/'` for custom-domain GitHub Pages hosting](0005-astro-base-path.md)   | Accepted |
 | 0006 | [Multi-subscription deployment mode](0006-multi-subscription-mode.md)                 | Accepted |
 
 ## When to add a new ADR
