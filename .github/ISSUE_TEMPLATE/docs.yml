@@ -1,5 +1,6 @@
 name: 📚 Docs improvement
-description: Report a typo, broken link, unclear explanation, missing topic, or rendering bug on the docs site.
+description: Report a typo, broken link, unclear explanation, missing topic, or
+  rendering bug on the docs site.
 title: "[docs] "
 labels: [ "docs", "triage" ]
 body:
@@ -13,8 +14,10 @@ body:
     id: page
     attributes:
       label: Page URL
-      description: Paste the published URL or the relative path under `site/src/content/docs/`.
-      placeholder: e.g. https://travishankins.github.io/azure-launchpad/scenarios/multi-subscription/
+      description: Paste the published URL or the relative path under
+        `site/src/content/docs/`.
+      placeholder: e.g.
+        https://travishankins.github.io/azure-launchpad/scenarios/multi-subscription/
     validations:
       required: true
   - type: dropdown
@@ -35,14 +38,17 @@ body:
     id: what
     attributes:
       label: What's wrong?
-      description: Quote the offending text or describe the issue. Screenshots welcome for rendering bugs.
-      placeholder: "The 'Pre-flight checklist' section says X, but the actual behavior is Y..."
+      description: Quote the offending text or describe the issue. Screenshots welcome
+        for rendering bugs.
+      placeholder: "The 'Pre-flight checklist' section says X, but the actual behavior
+        is Y..."
     validations:
       required: true
   - type: textarea
     id: suggestion
     attributes:
       label: Suggested fix (optional)
-      description: If you have a specific change in mind, drop it here. A diff or rewritten paragraph is great.
+      description: If you have a specific change in mind, drop it here. A diff or
+        rewritten paragraph is great.
     validations:
       required: false
