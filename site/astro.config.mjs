@@ -72,6 +72,7 @@ export default defineConfig({
           label: 'Reference',
           items: [
             { label: 'Architecture', link: '/reference/architecture/' },
+            { label: 'Non-goals', link: '/reference/non-goals/' },
             { label: 'Day-2 operations', link: '/reference/day-2-operations/' },
             { label: 'CI/CD pipeline', link: '/reference/cicd/' },
             { label: 'Troubleshooting', link: '/reference/troubleshooting/' },

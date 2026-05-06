@@ -19,6 +19,8 @@ Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** 
 
 📘 **Full docs + interactive deployment wizard:** [azurelaunchpad.com](https://azurelaunchpad.com/) — try the [deployment wizard](https://azurelaunchpad.com/wizard/). Source for the site lives in [`site/`](./site/) and is published by [`.github/workflows/site-deploy.yml`](./.github/workflows/site-deploy.yml).
 
+> ℹ️ See [Non-goals](https://azurelaunchpad.com/reference/non-goals/) for what Launchpad intentionally does *not* do.
+
 ## Prerequisites
 
 - Terraform `>= 1.9`
