@@ -44,7 +44,7 @@ On first open, `postCreateCommand` runs `pre-commit install` and `npm install` i
 
 - An Azure subscription where you have **Owner** at the subscription scope (needed once for the Service Principal + bootstrap RG/storage).
 - Permission to create app registrations in Microsoft Entra ID (or an existing app registration you can reuse).
-- For `vpn` / `full`: knowledge of the customer's on-premises VPN device public IP, supported IKE versions, and the on-premises CIDR(s) that should be reachable.
+- For post-deploy site-to-site VPN wiring: knowledge of the customer's on-premises VPN device public IP, supported IKE versions, shared key handling, and the on-premises CIDR(s) that should be reachable.
 
 ## Local prep
 
@@ -65,7 +65,7 @@ export ARM_SUBSCRIPTION_ID=<subscription-id>
 This creates:
 
 - A resource group `rg-tfstate-<prefix>-<region>`
-- A storage account `sttfstate<prefix><region><6-char-hash>`
+- A storage account `st<prefix>tfstate<6-char-hash>`
 - A blob container `tfstate`
 
 The script is idempotent — re-running it just discovers the existing resources.
