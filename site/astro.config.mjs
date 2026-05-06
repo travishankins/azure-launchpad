@@ -50,6 +50,7 @@ export default defineConfig({
         {
           label: 'Scenarios',
           items: [
+            { label: 'Choose a scenario', link: '/scenarios/choose/' },
             { label: 'Compare all four', link: '/scenarios/' },
             { label: 'Baseline (~$48)', link: '/scenarios/baseline/' },
             { label: 'Firewall (~$336)', link: '/scenarios/firewall/' },
