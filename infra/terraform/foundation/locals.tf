@@ -26,11 +26,6 @@ locals {
   use_nat      = !local.use_firewall # NAT GW only when no firewall handles egress
   use_peering  = local.use_firewall || local.use_vpn
 
-  # Cross-scenario validation: vpn/full require at least one on-prem CIDR.
-  _validate_onprem = (
-    local.use_vpn && length(var.on_premises_address_space) == 0
-  ) ? tobool("ERROR: on_premises_address_space must be provided for vpn/full scenarios.") : true
-
   # Budget validation: enabling budgets requires at least one alert email.
   _validate_budget_emails = (
     var.budget_enabled && length(var.budget_alert_emails) == 0

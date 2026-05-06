@@ -37,9 +37,6 @@ param addressSpaceHub string = '10.0.0.0/23'
 @description('Spoke VNet CIDR.')
 param addressSpaceSpoke string = '10.0.2.0/23'
 
-@description('On-premises CIDRs. Required for vpn/full scenarios (used by VPN local network gateways and route tables).')
-param onPremisesAddressSpace array = []
-
 @description('Log Analytics workspace retention in days.')
 @minValue(30)
 @maxValue(730)

@@ -56,7 +56,7 @@ const QUESTIONS = [
     id: 'subscription_id',
     label: 'Target Azure subscription ID (single-sub mode)',
     help: 'Single subscription that hosts everything. The OIDC service principal used by CI must have Contributor here. Find with: az account show --query id -o tsv',
-    impact: 'Used as the home subscription for the azurerm provider. All 6 resource groups (rg-net-hub, rg-net-spoke, rg-security, rg-monitoring, rg-automation, rg-recovery) land here.',
+    impact: 'Used as the home subscription for the azurerm provider. All 6 resource groups (rg-hub, rg-monitor, rg-backup, rg-spoke-prod, rg-security, rg-migrate) land here.',
     type: 'text',
     placeholder: '00000000-0000-0000-0000-000000000000',
     pattern: /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
@@ -96,7 +96,7 @@ const QUESTIONS = [
     id: 'name_prefix',
     label: 'Short name prefix for resources (2-8 lowercase alphanumeric)',
     help: 'Used as the org/customer slug in every resource name. Stays the same across scenarios for one customer.',
-    impact: 'Naming pattern: <type>-<prefix>-<region>[-suffix]. Examples: rg-net-hub-contoso-wcus, vnet-hub-contoso-wcus, kv-contoso-wcus-<rand6>, fw-contoso-wcus.',
+    impact: 'Naming pattern: <type>-<prefix>-<region>[-suffix]. Examples: rg-hub-contoso-wcus, vnet-hub-contoso-wcus, kv-contoso-wcus-<rand5>, afw-contoso-wcus.',
     type: 'text',
     default: 'contoso',
     pattern: /^[a-z0-9]{2,8}$/,
@@ -122,17 +122,6 @@ const QUESTIONS = [
       'australiaeast',
       'southeastasia',
     ].map((r) => ({ value: r, label: r })),
-  },
-  {
-    id: 'on_prem_cidrs',
-    label: 'On-premises CIDR(s) — comma-separated (only required if you chose hybrid VPN)',
-    help: 'Address spaces of your on-premises networks. Used by the VPN local network gateway and BGP route advertisement.',
-    impact: 'Must NOT overlap the hub (10.0.0.0/22) or spoke (10.10.0.0/22) VNets. Multiple CIDRs are allowed.',
-    type: 'text',
-    placeholder: '192.168.0.0/16, 10.50.0.0/16',
-    optional: true,
-    pattern: /^(\s*([0-9]{1,3}\.){3}[0-9]{1,3}\/(?:[0-9]|[12][0-9]|3[0-2])\s*)(,\s*([0-9]{1,3}\.){3}[0-9]{1,3}\/(?:[0-9]|[12][0-9]|3[0-2])\s*)*$/,
-    error: 'Comma-separated CIDR list, e.g. 192.168.0.0/16',
   },
   {
     id: 'mg_enable',
@@ -246,7 +235,6 @@ function isStepSkipped(qid, answers) {
   if (qid === 'connectivity_subscription_id' || qid === 'management_subscription_id' || qid === 'landingzone_subscription_id') {
     return answers.deployment_mode !== 'multi';
   }
-  if (qid === 'on_prem_cidrs') return answers.hybrid !== 'yes';
   if (qid === 'tenant_id' || qid === 'mg_optional' || qid === 'mg_policies') return answers.mg_enable !== 'yes';
   if (qid === 'log_retention_days' || qid === 'budget_amount' || qid === 'budget_alert_emails' || qid === 'workbook_enabled') {
     return answers.advanced_mode !== 'yes';
@@ -292,15 +280,6 @@ function buildTfvars(answers) {
     lines.push(`management_subscription_id   = "${answers.management_subscription_id}"`);
     lines.push(`landingzone_subscription_id  = "${answers.landingzone_subscription_id}"`);
   }
-  if (scenario === 'vpn' || scenario === 'full') {
-    const cidrs = (answers.on_prem_cidrs || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    lines.push(
-      `on_premises_address_space = [${cidrs.map((c) => `"${c}"`).join(', ')}]`,
-    );
-  }
   // --- Advanced mode -------------------------------------------------------
   if (answers.advanced_mode === 'yes') {
     if (answers.log_retention_days && answers.log_retention_days !== '30') {
@@ -332,17 +311,6 @@ function buildBicepParams(answers) {
     `param location = '${answers.location}'`,
     `param namePrefix = '${answers.name_prefix}'`,
   ];
-  if (scenario === 'vpn' || scenario === 'full') {
-    const cidrs = (answers.on_prem_cidrs || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    lines.push(
-      `param onPremisesAddressSpace = [`,
-      ...cidrs.map((c) => `  '${c}'`),
-      `]`,
-    );
-  }
   // --- Advanced mode -------------------------------------------------------
   if (answers.advanced_mode === 'yes') {
     if (answers.log_retention_days && answers.log_retention_days !== '30') {
@@ -728,11 +696,6 @@ function render(root) {
         const isEmpty = q.type === 'checkbox' ? false : !value;
         if (isEmpty && !q.optional) {
           errBox.textContent = 'Please choose an option.';
-          errBox.classList.remove('hidden');
-          return;
-        }
-        if (q.id === 'on_prem_cidrs' && state.answers.hybrid === 'yes' && !value) {
-          errBox.textContent = 'Provide at least one on-premises CIDR.';
           errBox.classList.remove('hidden');
           return;
         }

@@ -149,12 +149,11 @@ az bicep build --file infra/bicep/foundation/main.bicep
 
 **Cause:** Hub or spoke CIDR overlaps with one of your on-prem CIDRs.
 
-**Fix:** Pick non-overlapping ranges. Defaults are `10.0.0.0/23` (hub) and `10.0.2.0/23` (spoke); change in your tfvars or bicepparam:
+**Fix:** Pick non-overlapping ranges. Defaults are `10.0.0.0/23` (hub) and `10.0.2.0/23` (spoke); change the VNet ranges in your tfvars or bicepparam, and use non-overlapping on-prem ranges when you add the post-deploy S2S connection:
 
 ```hcl
 address_space_hub        = "10.20.0.0/23"
 address_space_spoke      = "10.20.2.0/23"
-on_premises_address_space = ["192.168.0.0/16"]
 ```
 
 ### Spoke VMs can't reach the internet after switching to firewall scenario
@@ -166,8 +165,8 @@ on_premises_address_space = ["192.168.0.0/16"]
 ```bash
 az network firewall network-rule create \
   --collection-name allow-egress \
-  --firewall-name fw-<prefix>-<region> \
-  --resource-group rg-net-hub-<prefix>-<region> \
+  --firewall-name afw-<prefix>-<region> \
+  --resource-group rg-hub-<prefix>-<region> \
   --name allow-https \
   --action Allow --priority 100 \
   --protocols TCP --source-addresses '*' \
@@ -187,7 +186,7 @@ Check, in order:
 
 **Cause:** As of mid-2025 Azure requires AZ-class SKUs (`VpnGw1AZ`, `VpnGw2AZ`) even in regions without AZs. The repo defaults to `VpnGw2AZ`.
 
-**Fix:** No action needed if you're using the bundled scenarios. If you customised the SKU back to `VpnGw1`, switch it back to `VpnGw1AZ`.
+**Fix:** No action needed if you're using the bundled scenarios. If you customised the SKU back to `VpnGw1`, switch it back to `VpnGw2AZ`.
 
 ## Governance / Management Groups
 
@@ -212,7 +211,7 @@ az role assignment create \
 
 ```bash
 az policy state trigger-scan \
-  --resource-group rg-net-spoke-<prefix>-<region>
+  --resource-group rg-spoke-prod-<prefix>-<region>
 ```
 
 ## CI / GitHub Actions

@@ -20,8 +20,6 @@ az account set --subscription <subscription-id>
 
 The four scenarios mirror the Terraform side: `baseline`, `firewall`, `vpn`, `full`. Each has a `.bicepparam` file under `infra/bicep/foundation/scenarios/`.
 
-For VPN/full, edit the file first and replace the `onPremisesAddressSpace` value with your customer CIDRs.
-
 ## 3. Preview
 
 ```bash

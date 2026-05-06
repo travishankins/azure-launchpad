@@ -169,9 +169,12 @@ resource vpnGw 'Microsoft.Network/virtualNetworkGateways@2024-05-01' = if (hasVp
     enableBgp: false
     activeActive: false
     sku: {
-      name: 'VpnGw1'
-      tier: 'VpnGw1'
+      // Azure retired non-AZ VpnGw1-5 SKUs in May 2026 (NonAzSkusNotAllowedForVPNGateway).
+      // Use *AZ SKUs even in regions without availability zones.
+      name: 'VpnGw2AZ'
+      tier: 'VpnGw2AZ'
     }
+    vpnGatewayGeneration: 'Generation2'
     ipConfigurations: [
       {
         name: 'vpngw-ipconfig'
