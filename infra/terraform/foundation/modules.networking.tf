@@ -1,6 +1,11 @@
 ###############################################################################
 # Hub VNet
 ###############################################################################
+# Known upstream deprecation, tracked for next AVM bump:
+#   The vnet AVM (and the private DNS zone AVM below) declare a `multiplier`
+#   attribute on their azapi retry blocks that is deprecated upstream.
+#   The warnings originate inside the pinned module sources and clear when
+#   the modules are bumped to versions that drop the attribute.
 module "vnet_hub" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
   version = "0.17.1"

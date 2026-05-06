@@ -3,6 +3,11 @@ data "azurerm_client_config" "current" {}
 ###############################################################################
 # Key Vault with private endpoint into the spoke
 ###############################################################################
+# Known upstream deprecation, tracked for next AVM bump:
+#   `enable_rbac_authorization` is renamed to `rbac_authorization_enabled`
+#   in azurerm 5.x. The 0.10.2 AVM still emits the old name; the warning
+#   clears when this module is bumped past the version that adopts the
+#   provider rename.
 module "key_vault" {
   source  = "Azure/avm-res-keyvault-vault/azurerm"
   version = "0.10.2"
