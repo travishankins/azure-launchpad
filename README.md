@@ -14,8 +14,8 @@ Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** 
 | ---------- | --------------- | --------------------------------------------------------------------------- |
 | `baseline` | ~$48            | Hub-spoke VNets, NAT GW, Key Vault + PE, Log Analytics, Automation, RSV     |
 | `firewall` | ~$336           | Baseline + Azure Firewall (Basic) + UDRs + hub↔spoke peering (replaces NAT) |
-| `vpn`      | ~$187           | Baseline + VPN Gateway (`VpnGw1AZ`) + gateway transit                       |
-| `full`     | ~$476           | Firewall + VPN combined                                                     |
+| `vpn`      | ~$327           | Baseline + VPN Gateway (`VpnGw2AZ`) + gateway transit                       |
+| `full`     | ~$616           | Firewall + VPN combined                                                     |
 
 📘 **Full docs + interactive deployment wizard:** [azurelaunchpad.com](https://azurelaunchpad.com/) — try the [deployment wizard](https://azurelaunchpad.com/wizard/). Source for the site lives in [`site/`](./site/) and is published by [`.github/workflows/site-deploy.yml`](./.github/workflows/site-deploy.yml).
 

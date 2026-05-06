@@ -91,7 +91,7 @@ variable "address_space_spoke" {
 }
 
 variable "on_premises_address_space" {
-  description = "List of on-premises CIDRs for VPN/Full scenarios. Required when scenario is vpn or full."
+  description = "Optional on-premises CIDRs for post-deploy site-to-site VPN connection resources. The foundation deploys the gateway only."
   type        = list(string)
   default     = []
   validation {

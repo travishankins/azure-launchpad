@@ -50,7 +50,7 @@ Microsoft's full ALZ reference adds an **Identity** sub (AD DS / Entra DS) and p
 │  ├─ GatewaySubnet            *vpn    │   │                                  │
 │  ├─ default                          │   │  rg-backup-<suffix>              │
 │  ├─ Azure Firewall (Basic)   *fw     │   │  └─ Recovery Services Vault      │
-│  ├─ VPN Gateway (VpnGw1)     *vpn    │   │                                  │
+│  ├─ VPN Gateway (VpnGw2AZ)   *vpn    │   │                                  │
 │  └─ Private DNS Zone (KV)            │   └──────────────────────────────────┘
 │      ├─ link → hub VNet                                  ▲
 │      └─ link → spoke VNet  ⇠─── cross-sub link  ─────┐   │ diagnostics
