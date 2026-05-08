@@ -3,6 +3,10 @@ title: Compare scenarios
 description: Pick the right Azure Launchpad (SMB / SMEC Edition) landing zone scenario for your customer.
 ---
 
+:::tip[Not sure where to start?]
+The [Choose a scenario](/scenarios/choose/) decision guide narrows it down in three questions.
+:::
+
 Every scenario shares the same hub-spoke topology. You only add what the customer actually needs.
 
 |                                | Baseline | Firewall | VPN   | Full  |

@@ -32,6 +32,8 @@ jobs:
         run: terraform -chdir=${{ env.WORKING_DIR }} init -backend=false
       - name: terraform validate
         run: terraform -chdir=${{ env.WORKING_DIR }} validate
+      - name: terraform test
+        run: terraform -chdir=${{ env.WORKING_DIR }} test
 
   security-scan:
     runs-on: ubuntu-latest

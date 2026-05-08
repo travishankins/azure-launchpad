@@ -50,6 +50,7 @@ export default defineConfig({
         {
           label: 'Scenarios',
           items: [
+            { label: 'Choose a scenario', link: '/scenarios/choose/' },
             { label: 'Compare all four', link: '/scenarios/' },
             { label: 'Baseline (~$48)', link: '/scenarios/baseline/' },
             { label: 'Firewall (~$336)', link: '/scenarios/firewall/' },
@@ -71,7 +72,9 @@ export default defineConfig({
           label: 'Reference',
           items: [
             { label: 'Architecture', link: '/reference/architecture/' },
+            { label: 'Non-goals', link: '/reference/non-goals/' },
             { label: 'Day-2 operations', link: '/reference/day-2-operations/' },
+            { label: 'Post-deploy VPN connection', link: '/reference/vpn-post-deploy/' },
             { label: 'CI/CD pipeline', link: '/reference/cicd/' },
             { label: 'Troubleshooting', link: '/reference/troubleshooting/' },
             { label: 'Glossary', link: '/reference/glossary/' },

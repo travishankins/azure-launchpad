@@ -31,6 +31,18 @@ jobs:
             echo "=== $s ==="
             az bicep build-params --file ${{ env.WORKING_DIR }}/scenarios/$s.bicepparam --stdout > /dev/null
           done
+      - name: Bicep build (multi-sub layer files)
+        run: |
+          for f in ${{ env.WORKING_DIR }}/multi-sub/*.bicep; do
+            echo "=== $f ==="
+            az bicep build --file "$f" --stdout > /dev/null
+          done
+      - name: Bicep build-params (multi-sub scenarios)
+        run: |
+          for s in connectivity management landingzone; do
+            echo "=== $s ==="
+            az bicep build-params --file ${{ env.WORKING_DIR }}/multi-sub/scenarios/$s.bicepparam --stdout > /dev/null
+          done
 
   what-if:
     needs: build-validate

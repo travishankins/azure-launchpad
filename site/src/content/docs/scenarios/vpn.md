@@ -5,6 +5,10 @@ description: ~$327/month — adds a VPN Gateway (VpnGw2AZ) for site-to-site conn
 
 **Approx. cost:** ~$327 / month (`VpnGw2AZ`).
 
+:::tip[Next step]
+The foundation provisions the gateway. To finish wiring the IPsec tunnel to your on-prem device, see [Post-deploy VPN connection](/reference/vpn-post-deploy/).
+:::
+
 :::note[Why `VpnGw2AZ`?]
 Microsoft retired the non-AZ `VpnGw1`–`VpnGw5` SKUs in May 2026 (`NonAzSkusNotAllowedForVPNGateway`). The `azurerm` provider's validation also dropped `VpnGw1AZ`, so the foundation pins **`VpnGw2AZ`** (Generation 2) for both Terraform and Bicep — even in regions without availability zones.
 :::
