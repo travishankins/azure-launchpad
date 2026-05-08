@@ -5,6 +5,8 @@ description: Deploy the baseline scenario with Bicep in under an hour.
 
 If you prefer Microsoft's native IaC, use the Bicep root — it deploys the same architecture as the Terraform root.
 
+> **No-install option** — every command below also works in [Azure Cloud Shell](https://shell.azure.com) (Bash). Cloud Shell is pre-authenticated and `az bicep` is built in. See [Prerequisites → Option A: Cloud Shell](/getting-started/prerequisites/#option-a--azure-cloud-shell) for the full walkthrough.
+
 ## 1. Sign in
 
 ```bash

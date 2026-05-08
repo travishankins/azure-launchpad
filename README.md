@@ -27,7 +27,11 @@ Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** 
 - Azure CLI logged in (`az login`) with permissions to create resources in the target subscription
 - For post-deploy site-to-site VPN wiring: the customer VPN peer IP, shared key handling, and on-premises CIDRs
 
-> 💡 **Skip the local install** by opening the repo in [GitHub Codespaces](https://codespaces.new/travishankins/azure-launchpad) or _VS Code → Reopen in Container_. The shipped [`.devcontainer`](./.devcontainer/devcontainer.json) preinstalls Terraform 1.14, Azure CLI + Bicep, Node 20, GitHub CLI, pre-commit, and `just` — just `az login` and you're ready to deploy.
+> 💡 **Skip the local install.** Three zero-setup paths, fully documented in [Prerequisites → Choose your environment](https://azurelaunchpad.com/getting-started/prerequisites/#choose-your-environment):
+>
+> - **Azure Cloud Shell** — open <https://shell.azure.com>, `git clone`, deploy. Pre-authenticated, `az` + `terraform` built in.
+> - **GitHub Codespaces** — [one-click launch](https://codespaces.new/travishankins/azure-launchpad). Full VS Code with Terraform 1.14, Azure CLI + Bicep, Node 20, GitHub CLI, pre-commit, and `just` preinstalled via [`.devcontainer`](./.devcontainer/devcontainer.json).
+> - **VS Code Dev Container** — _Reopen in Container_ on a local Docker. Same image as Codespaces.
 
 ## Quick start
 

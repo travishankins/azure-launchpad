@@ -5,6 +5,8 @@ description: Deploy the baseline scenario with Terraform in under an hour.
 
 If you just want to see something work, follow these five steps. Prefer Microsoft's native IaC? See [Quick start (Bicep)](/getting-started/quick-start-bicep/) for the equivalent flow.
 
+> **No-install option** — every command below also works in [Azure Cloud Shell](https://shell.azure.com) (Bash). Cloud Shell is pre-authenticated and ships with `az`, `terraform`, and `git`. See [Prerequisites → Option A: Cloud Shell](/getting-started/prerequisites/#option-a--azure-cloud-shell) for the full walkthrough and Terraform-version pinning tip.
+
 ## 1. Bootstrap the state backend
 
 ```bash
