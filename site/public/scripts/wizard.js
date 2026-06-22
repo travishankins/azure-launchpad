@@ -652,14 +652,71 @@ function buildDeploymentReadme(answers) {
   const scenario = deriveScenario(answers);
   const isBicep = answers.iac_platform === 'bicep';
   const isMulti = resolveDeploymentMode(answers) === 'multi';
+  const isActions = answers.deploy_method === 'actions';
   const hasMg = resolveMgEnable(answers) === 'yes';
   const paramFileName = isBicep ? 'wizard.bicepparam' : 'wizard.auto.tfvars';
   const paramFolder = isBicep
     ? 'infra/bicep/foundation/scenarios'
     : 'infra/terraform/foundation/scenarios';
+
+  const header = `# Azure Launchpad \u2014 Deployment Kit
+
+Generated: ${new Date().toISOString().slice(0, 10)}
+Scenario: **${scenario}**
+IaC: ${isBicep ? 'Bicep' : 'Terraform'}
+Mode: ${isMulti ? 'Multi-subscription (ALZ split)' : 'Single subscription'}
+Region: ${answers.location}
+Name prefix: ${answers.name_prefix}
+Deploy method: ${isActions ? 'GitHub Actions (OIDC)' : 'Local / Cloud Shell'}
+`;
+
+  if (isActions) {
+    const planEnv = 'plan';
+    const protectedEnv = isBicep ? 'apply' : 'prod';
+    const ciFile = isBicep
+      ? `infra/bicep/foundation/scenarios/${scenario}.bicepparam`
+      : `infra/terraform/foundation/scenarios/${scenario}.tfvars`;
+    const workflowName = isBicep ? 'bicep-apply' : 'terraform-apply';
+    const tfVars = !isBicep ? `
+5. Set additional variables: \`TFSTATE_RG\`, \`TFSTATE_SA\`, \`TFSTATE_CONTAINER\`.` : '';
+    return header + `## GitHub Actions Setup
+
+1. Create an Entra app registration and grant Contributor on target subscription(s).
+2. Add federated credentials for the \`${planEnv}\` and \`${protectedEnv}\` environments.${hasMg ? `\n   Also add credentials for the \`apply-mg\` environment.` : ''}
+3. Create GitHub environments: \`${planEnv}\` (unprotected) and \`${protectedEnv}\` (Required Reviewers enabled).
+4. Set repository variables: \`AZURE_CLIENT_ID\`, \`AZURE_TENANT_ID\`, \`AZURE_SUBSCRIPTION_ID\`.${tfVars}
+6. Copy the generated parameter values into \`${ciFile}\` (committed, not gitignored).
+7. Push and trigger \`${workflowName}\` via workflow_dispatch, selecting scenario \`${scenario}\`.
+
+Full guide: https://azurelaunchpad.com/reference/cicd/
+
+## Notes
+
+- The CI param file (\`${ciFile}\`) is committed to the repo (not gitignored).
+- Pricing: see https://azure.microsoft.com/en-us/pricing/calculator/
+- Day-2 operations: see https://azurelaunchpad.com/reference/day-2-operations/
+`;
+  }
+
+  // Local / Cloud Shell flow
   const previewCmds = buildPreviewCommands(answers);
   const applyCmds = buildApplyCommands(answers);
   const verifyCmds = buildVerifyCommands(answers);
+  const mode = isMulti ? 'multi' : 'single';
+  const subArgs = isMulti
+    ? `--connectivity-sub ${answers.connectivity_subscription_id} \\\n  --management-sub ${answers.management_subscription_id} \\\n  --landingzone-sub ${answers.landingzone_subscription_id}`
+    : `--subscription ${answers.subscription_id}`;
+  const configArg = `--config ${paramFolder}/${paramFileName}`;
+  const preflightCmd = `./scripts/preflight.sh --iac ${isBicep ? 'bicep' : 'terraform'} --mode ${mode} \\\n  ${subArgs} \\\n  ${configArg}`;
+  const bootstrapSection = isBicep ? '' : `
+### Bootstrap state backend (first time only)
+\`\`\`bash
+./scripts/bootstrap-state.sh \\
+  --subscription ${isMulti ? answers.management_subscription_id : answers.subscription_id} \\
+  --name-prefix ${answers.name_prefix} \\
+  --region ${answers.location}
+\`\`\`
+`;
 
   let mgSection = '';
   if (hasMg) {
@@ -680,23 +737,11 @@ ${mgApply}
 `;
   }
 
-  return `# Azure Launchpad — Deployment Kit
-
-Generated: ${new Date().toISOString().slice(0, 10)}
-Scenario: **${scenario}**
-IaC: ${isBicep ? 'Bicep' : 'Terraform'}
-Mode: ${isMulti ? 'Multi-subscription (ALZ split)' : 'Single subscription'}
-Region: ${answers.location}
-Name prefix: ${answers.name_prefix}
-
-## Quick start
-
-1. Copy \`${paramFileName}\` to \`${paramFolder}/\` in the repo.
-2. Run preflight, preview, then apply:
-
+  return header + `## Quick start
+${isBicep && isMulti ? '\nMulti-sub Bicep passes values via command arguments (no param file needed).\n' : `\n1. Copy \`${paramFileName}\` to \`${paramFolder}/\` in the repo.\n2. Run preflight, preview, then apply:\n`}${bootstrapSection}
 ### Preflight
 \`\`\`bash
-./scripts/preflight.sh --iac ${isBicep ? 'bicep' : 'terraform'} --mode ${isMulti ? 'multi' : 'single'}
+${preflightCmd}
 \`\`\`
 
 ### Preview (dry-run, no resources created)
@@ -1005,8 +1050,9 @@ function render(root) {
         id: q.id, name: q.id, type: 'text',
         placeholder: q.placeholder || '',
         value: state.answers[q.id] || q.default || '',
+        'aria-label': q.label,
         // Don't let browsers / password managers cache subscription IDs,
-        // tenant IDs, CIDRs, or name prefixes across sessions.
+        // tenant IDs, or name prefixes across sessions.
         autocomplete: 'off',
         autocorrect: 'off',
         autocapitalize: 'off',
@@ -1076,12 +1122,33 @@ function render(root) {
     const isBicep = state.answers.iac_platform === 'bicep';
     const isActions = state.answers.deploy_method === 'actions';
     const platformLabel = isBicep ? 'Bicep' : 'Terraform';
+    const isMulti = resolveDeploymentMode(state.answers) === 'multi';
     const paramFileName = isBicep ? 'wizard.bicepparam' : 'wizard.auto.tfvars';
     const paramFolder = isBicep
       ? 'infra/bicep/foundation/scenarios'
       : 'infra/terraform/foundation/scenarios';
     const paramFile = isBicep ? buildBicepParams(state.answers) : buildTfvars(state.answers);
     const hasMg = resolveMgEnable(state.answers) === 'yes';
+
+    // Multi-subscription + Actions is not supported by the existing workflows
+    if (isActions && isMulti) {
+      root.appendChild(el('h2', {}, 'Multi-subscription CI/CD is not yet supported'));
+      root.appendChild(el('div', { class: 'verdict' },
+        'The existing GitHub Actions workflows deploy to a single subscription. ',
+        'Multi-subscription deployment requires the local/Cloud Shell flow, or a custom pipeline. ',
+      ));
+      root.appendChild(el('div', { class: 'actions' },
+        el('button', {
+          type: 'button', class: 'secondary',
+          onclick: () => { state.step = QUESTIONS.findIndex((q) => q.id === 'deploy_method'); state._direction = 1; draw(); },
+        }, 'Change to Local / Cloud Shell'),
+        el('button', {
+          type: 'button', class: 'secondary',
+          onclick: () => { state.step = 0; state._direction = 1; draw(); },
+        }, 'Start over'),
+      ));
+      return;
+    }
 
     // --- Review Summary ---
     root.appendChild(el('h2', {}, 'Review your configuration'));
@@ -1098,7 +1165,12 @@ function render(root) {
     if (state.answers.budget_amount) {
       reviewRows.push(['Budget', `$${state.answers.budget_amount} USD/mo`]);
     }
-    reviewRows.push(['Required role', hasMg ? 'Contributor + MG Contributor at Tenant Root' : 'Contributor on target subscription(s)']);
+    const roles = ['Contributor on target subscription(s)'];
+    if (isMulti) roles.push('Network Contributor on connectivity subscription');
+    if (state.answers.mg_policies === 'starter') roles.push('Resource Policy Contributor');
+    if (!isBicep) roles.push('Storage Blob Data Contributor on state storage account');
+    if (hasMg) roles.push('Management Group Contributor at Tenant Root');
+    reviewRows.push(['Required role(s)', roles.join('; ')]);
     const tbody = el('tbody');
     reviewRows.forEach(([label, value]) => {
       tbody.appendChild(el('tr', {},
@@ -1145,40 +1217,93 @@ function render(root) {
     }
 
     // Stage 1: Save configuration
-    root.appendChild(stage(1, `Save ${platformLabel} parameter file`, '', (body) => {
-      body.appendChild(el('p', {},
-        `Save as `, el('code', {}, `${paramFolder}/${paramFileName}`), '.',
-      ));
-      body.appendChild(el('div', { class: 'wizard-impact wizard-secret-warning' },
-        el('strong', {}, 'Keep out of public repos. '),
-        `Contains subscription/tenant IDs. The repo\u2019s .gitignore already excludes wizard-generated files.`,
-      ));
-      const pre = el('pre', {}, el('code', {}, paramFile));
-      pre.appendChild(copyButton(paramFile));
-      body.appendChild(pre);
-      body.appendChild(el('a', {
-        href: URL.createObjectURL(new Blob([paramFile], { type: 'text/plain' })),
-        download: paramFileName,
-        class: 'wizard-download',
-      }, `Download ${paramFileName}`));
-      const readme = buildDeploymentReadme(state.answers);
-      body.appendChild(el('a', {
-        href: URL.createObjectURL(new Blob([readme], { type: 'text/markdown' })),
-        download: 'DEPLOY.md',
-        class: 'wizard-download',
-      }, 'Download deployment kit (DEPLOY.md)'));
-    }));
+    if (isBicep && isMulti) {
+      // Multi-sub Bicep passes all values via deploy.sh arguments; no param file needed.
+      root.appendChild(stage(1, 'Configuration values (passed via command args)', '', (body) => {
+        body.appendChild(el('p', {},
+          'Multi-subscription Bicep passes values directly to ',
+          el('code', {}, 'deploy.sh'), '. No separate parameter file is needed.',
+        ));
+        body.appendChild(el('p', {}, el('strong', {}, 'Your values:')));
+        const vals = el('ul');
+        vals.appendChild(el('li', {}, `Scenario: ${scenario}`));
+        vals.appendChild(el('li', {}, `Name prefix: ${state.answers.name_prefix}`));
+        vals.appendChild(el('li', {}, `Region: ${state.answers.location}`));
+        vals.appendChild(el('li', {}, `Connectivity sub: ${state.answers.connectivity_subscription_id}`));
+        vals.appendChild(el('li', {}, `Management sub: ${state.answers.management_subscription_id}`));
+        vals.appendChild(el('li', {}, `Landing zone sub: ${state.answers.landingzone_subscription_id}`));
+        body.appendChild(vals);
+        const readme = buildDeploymentReadme(state.answers);
+        body.appendChild(el('a', {
+          href: URL.createObjectURL(new Blob([readme], { type: 'text/markdown' })),
+          download: 'DEPLOY.md',
+          class: 'wizard-download',
+        }, 'Download deployment kit (DEPLOY.md)'));
+      }));
+    } else {
+      root.appendChild(stage(1, `Save ${platformLabel} parameter file`, '', (body) => {
+        body.appendChild(el('p', {},
+          `Save as `, el('code', {}, `${paramFolder}/${paramFileName}`), '.',
+        ));
+        body.appendChild(el('div', { class: 'wizard-impact wizard-secret-warning' },
+          el('strong', {}, 'Keep out of public repos. '),
+          `Contains subscription/tenant IDs. The repo\u2019s .gitignore already excludes wizard-generated files.`,
+        ));
+        const pre = el('pre', {}, el('code', {}, paramFile));
+        pre.appendChild(copyButton(paramFile));
+        body.appendChild(pre);
+        body.appendChild(el('a', {
+          href: URL.createObjectURL(new Blob([paramFile], { type: 'text/plain' })),
+          download: paramFileName,
+          class: 'wizard-download',
+        }, `Download ${paramFileName}`));
+        const readme = buildDeploymentReadme(state.answers);
+        body.appendChild(el('a', {
+          href: URL.createObjectURL(new Blob([readme], { type: 'text/markdown' })),
+          download: 'DEPLOY.md',
+          class: 'wizard-download',
+        }, 'Download deployment kit (DEPLOY.md)'));
+      }));
+    }
 
     if (isActions) {
       // Stage 2 for Actions: environment setup checklist
+      const planEnv = 'plan';
+      const protectedEnv = isBicep ? 'apply' : 'prod';
+      const ciFileName = isBicep
+        ? `infra/bicep/foundation/scenarios/${scenario}.bicepparam`
+        : `infra/terraform/foundation/scenarios/${scenario}.tfvars`;
+      const workflowName = isBicep ? 'bicep-apply' : 'terraform-apply';
       root.appendChild(stage(2, 'Configure GitHub Actions (OIDC)', '', (body) => {
         body.appendChild(el('p', {}, 'Set up your repository for automated deployment with OIDC:'));
         const checklist = el('ol', { class: 'wizard-steps' });
         checklist.appendChild(el('li', {}, 'Create an Entra app registration and grant Contributor on target subscription(s).'));
-        checklist.appendChild(el('li', {}, 'Add federated credentials for the ', el('code', {}, 'apply'), ' environment (and ', el('code', {}, 'apply-mg'), ' if using MGs).'));
-        checklist.appendChild(el('li', {}, 'Create GitHub environments (', el('code', {}, 'apply'), ') with Required Reviewers enabled.'));
+        checklist.appendChild(el('li', {},
+          'Add federated credentials for the ',
+          el('code', {}, planEnv), ' and ',
+          el('code', {}, protectedEnv), ' environments',
+          hasMg ? ' (and ' : '', hasMg ? el('code', {}, 'apply-mg') : '', hasMg ? ' for MGs).' : '.',
+        ));
+        checklist.appendChild(el('li', {},
+          'Create GitHub environments: ',
+          el('code', {}, planEnv), ' (unprotected) and ',
+          el('code', {}, protectedEnv), ' (Required Reviewers enabled).',
+        ));
         checklist.appendChild(el('li', {}, 'Set repository variables: ', el('code', {}, 'AZURE_CLIENT_ID'), ', ', el('code', {}, 'AZURE_TENANT_ID'), ', ', el('code', {}, 'AZURE_SUBSCRIPTION_ID'), '.'));
-        checklist.appendChild(el('li', {}, 'Push the parameter file and trigger ', el('code', {}, 'workflow_dispatch'), ' from the Actions tab.'));
+        if (!isBicep) {
+          checklist.appendChild(el('li', {}, 'Set additional variables: ', el('code', {}, 'TFSTATE_RG'), ', ', el('code', {}, 'TFSTATE_SA'), ', ', el('code', {}, 'TFSTATE_CONTAINER'), '.'));
+        }
+        checklist.appendChild(el('li', {},
+          'Copy the generated values into ',
+          el('code', {}, ciFileName),
+          ' (this file is committed, not gitignored).',
+        ));
+        checklist.appendChild(el('li', {},
+          'Push and trigger ',
+          el('code', {}, workflowName),
+          ' via workflow_dispatch, selecting scenario ',
+          el('code', {}, scenario), '.',
+        ));
         body.appendChild(checklist);
         body.appendChild(el('p', {},
           'Full guide: ', el('a', { href: '/reference/cicd/' }, 'CI/CD pipeline reference'), '.',
@@ -1186,11 +1311,24 @@ function render(root) {
       }));
     } else {
       // Stage 2 for Local: Preflight
-      const preflightCmd = isBicep
-        ? `./scripts/preflight.sh --iac bicep --mode ${resolveDeploymentMode(state.answers) === 'multi' ? 'multi' : 'single'}`
-        : `./scripts/preflight.sh --iac terraform --mode ${resolveDeploymentMode(state.answers) === 'multi' ? 'multi' : 'single'}`;
+      const mode = resolveDeploymentMode(state.answers) === 'multi' ? 'multi' : 'single';
+      const subArgs = mode === 'multi'
+        ? `--connectivity-sub ${state.answers.connectivity_subscription_id} \\\n  --management-sub ${state.answers.management_subscription_id} \\\n  --landingzone-sub ${state.answers.landingzone_subscription_id}`
+        : `--subscription ${state.answers.subscription_id}`;
+      const configArg = isBicep
+        ? `--config ${paramFolder}/${paramFileName}`
+        : `--config ${paramFolder}/${paramFileName}`;
+      let preflightCmd = isBicep
+        ? `./scripts/preflight.sh --iac bicep --mode ${mode} \\\n  ${subArgs} \\\n  ${configArg}`
+        : `./scripts/preflight.sh --iac terraform --mode ${mode} \\\n  ${subArgs} \\\n  ${configArg}`;
+      if (!isBicep) {
+        preflightCmd = `# Bootstrap Terraform state backend (first time only)\n./scripts/bootstrap-state.sh \\\n  --subscription ${mode === 'multi' ? state.answers.management_subscription_id : state.answers.subscription_id} \\\n  --name-prefix ${state.answers.name_prefix} \\\n  --region ${state.answers.location}\n\n# Validate tooling, auth, and subscription access\n${preflightCmd}`;
+      }
       root.appendChild(stage(2, 'Preflight checks', '', (body) => {
-        body.appendChild(el('p', {}, 'Validates tooling, Azure auth, and subscription access before you plan anything.'));
+        body.appendChild(el('p', {}, isBicep
+          ? 'Validates tooling, Azure auth, and subscription access before you deploy.'
+          : 'Bootstraps the Terraform state backend (first time only), then validates tooling, auth, and subscription access.',
+        ));
         const pre = el('pre', {}, el('code', {}, preflightCmd));
         pre.appendChild(copyButton(preflightCmd));
         body.appendChild(pre);

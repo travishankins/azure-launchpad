@@ -28,6 +28,7 @@ import {
   buildMgBicepParams,
   buildMgPreviewCommands,
   buildMgApplyCommands,
+  buildDeploymentReadme,
 } from './wizard.js';
 
 const platformAnswers = {
@@ -435,5 +436,58 @@ describe('buildMgApplyCommands', () => {
       location: 'eastus',
     });
     assert.match(out, /az deployment tenant create/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildDeploymentReadme
+// ---------------------------------------------------------------------------
+describe('buildDeploymentReadme', () => {
+  test('local flow includes preflight with --config arg', () => {
+    const out = buildDeploymentReadme({
+      deploy_method: 'local',
+      iac_platform: 'terraform',
+      intent: 'evaluate',
+      egress: 'none',
+      hybrid: 'no',
+      subscription_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      location: 'eastus',
+      name_prefix: 'test',
+    });
+    assert.match(out, /preflight\.sh/);
+    assert.match(out, /--config/);
+    assert.match(out, /bootstrap-state\.sh/);
+  });
+
+  test('actions flow omits local commands and shows OIDC setup', () => {
+    const out = buildDeploymentReadme({
+      deploy_method: 'actions',
+      iac_platform: 'terraform',
+      intent: 'evaluate',
+      egress: 'none',
+      hybrid: 'no',
+      subscription_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      location: 'eastus',
+      name_prefix: 'test',
+    });
+    assert.doesNotMatch(out, /preflight\.sh/);
+    assert.doesNotMatch(out, /deploy\.sh plan/);
+    assert.match(out, /GitHub Actions Setup/);
+    assert.match(out, /plan.*prod/s);
+  });
+
+  test('bicep actions flow references plan and apply envs', () => {
+    const out = buildDeploymentReadme({
+      deploy_method: 'actions',
+      iac_platform: 'bicep',
+      intent: 'evaluate',
+      egress: 'none',
+      hybrid: 'no',
+      subscription_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      location: 'eastus',
+      name_prefix: 'test',
+    });
+    assert.match(out, /`plan`.*`apply`/s);
+    assert.doesNotMatch(out, /`prod`/);
   });
 });
