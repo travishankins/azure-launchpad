@@ -6,7 +6,7 @@
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/travishankins/azure-launchpad)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
-Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** and **small and midsized enterprises and corps (SMEC)** — aligned with the Microsoft Cloud Adoption Framework (CAF) and Azure Landing Zone (ALZ) guidance, sized so a small platform team can actually own it. Deploys a hub-spoke topology with either **Terraform** (AVM-TF) or **Bicep**. One repo, four cost-tiered scenarios, one command. Includes an opt-in Management Groups + Azure Policy module for ALZ-aligned governance.
+Opinionated Azure **landing zones** for small and midsized organizations, aligned with the Microsoft Cloud Adoption Framework and Azure Landing Zone guidance. Deploy a hub-spoke foundation with **Terraform** or **Bicep** through one consistent lifecycle: configure, preflight, preview, approve, apply, and verify.
 
 ## Scenarios
 
@@ -24,47 +24,28 @@ Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** 
 ## Prerequisites
 
 - Terraform `>= 1.9`
-- Azure CLI logged in (`az login`) with permissions to create resources in the target subscription
+- Azure CLI logged in (`az login`) with `Contributor` on each target subscription
+- Terraform state users also need `Storage Blob Data Contributor` on the state account; bootstrap requires temporary role-assignment permission
 - For post-deploy site-to-site VPN wiring: the customer VPN peer IP, shared key handling, and on-premises CIDRs
 
 > 💡 **Skip the local install.** Three zero-setup paths, fully documented in [Prerequisites → Choose your environment](https://azurelaunchpad.com/getting-started/prerequisites/#choose-your-environment):
 >
 > - **Azure Cloud Shell** — open <https://shell.azure.com>, `git clone`, deploy. Pre-authenticated, `az` + `terraform` built in.
-> - **GitHub Codespaces** — [one-click launch](https://codespaces.new/travishankins/azure-launchpad). Full VS Code with Terraform 1.14, Azure CLI + Bicep, Node 20, GitHub CLI, pre-commit, and `just` preinstalled via [`.devcontainer`](./.devcontainer/devcontainer.json).
+> - **GitHub Codespaces** — [one-click launch](https://codespaces.new/travishankins/azure-launchpad). Full VS Code with Terraform 1.14, Azure CLI + Bicep, Node 22, GitHub CLI, pre-commit, and `just` preinstalled via [`.devcontainer`](./.devcontainer/devcontainer.json).
 > - **VS Code Dev Container** — _Reopen in Container_ on a local Docker. Same image as Codespaces.
 
 ## Quick start
 
-```bash
-# 1. One-time: create remote state backend
-export ARM_SUBSCRIPTION_ID=<your-sub-id>
-./scripts/bootstrap-state.sh
-# → prints the resource_group_name / storage_account_name to use below
-
-cd infra/terraform/foundation
-
-# 2. Initialize against the Azure backend
-terraform init \
-  -backend-config="resource_group_name=rg-tfstate-contoso-wcus" \
-  -backend-config="storage_account_name=<from bootstrap output>" \
-  -backend-config="container_name=tfstate" \
-  -backend-config="key=foundation.baseline.tfstate"
-
-# 3. Workspace per scenario keeps state isolated
-terraform workspace new baseline    # or: select -or-create
-
-# 4. Plan & apply
-terraform plan  -var="subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/baseline.tfvars
-terraform apply -var="subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/baseline.tfvars
-```
-
-Switch scenarios by selecting the matching workspace and `-var-file`:
+Generate a configuration at [azurelaunchpad.com/wizard](https://azurelaunchpad.com/wizard/), then use the emitted commands. The shared entry point is:
 
 ```bash
-terraform workspace select -or-create firewall
-terraform plan  -var="subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/firewall.tfvars
-terraform apply -var="subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/firewall.tfvars
+./scripts/deploy.sh plan  --iac terraform|bicep --mode single|multi ...
+# Review the Terraform plan or Bicep what-if output.
+./scripts/deploy.sh apply --iac terraform|bicep --mode single|multi ...
+./scripts/verify.sh ...
 ```
+
+Terraform `apply` requires the saved plan created by `plan`. See the [Terraform](https://azurelaunchpad.com/getting-started/quick-start/) and [Bicep](https://azurelaunchpad.com/getting-started/quick-start-bicep/) quick starts for complete commands.
 
 ## Tests
 
@@ -80,7 +61,7 @@ All four `tests/*.tftest.hcl` files run plan-mode assertions (no Azure API calls
 
 ```
 .github/workflows/   GitHub Actions: plan-on-PR (matrix), apply-on-dispatch
-scripts/             bootstrap-state.sh — one-time backend creation
+scripts/             preflight, state bootstrap, preview/apply, and verification
 infra/terraform/foundation/
   ├── *.tf           Root module composed from feature files
   ├── scenarios/     Per-scenario tfvars

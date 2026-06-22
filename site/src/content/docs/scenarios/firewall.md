@@ -23,9 +23,6 @@ Everything in [baseline](/scenarios/baseline/) **except** the spoke NAT Gateway,
 
 ## Deploy
 
-```bash
-terraform workspace select -or-create firewall
-terraform apply -var-file=scenarios/firewall.tfvars
-```
+Use the [configuration generator](/wizard/) and choose managed firewall egress. Its commands run preflight, save a preview, apply only after review, and verify the firewall. See the [Terraform](/getting-started/quick-start/) or [Bicep](/getting-started/quick-start-bicep/) quick start.
 
 > **Note** — if you upgrade Firewall Basic → Standard later, change `sku_tier` in `modules.firewall.tf` and re-apply. The mgmt subnet/PIP can stay (Basic-only requirement) or be removed.

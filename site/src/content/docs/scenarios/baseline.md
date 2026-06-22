@@ -31,7 +31,4 @@ description: ~$48/month — hub-spoke with NAT egress and shared services.
 
 ## Deploy
 
-```bash
-terraform workspace select -or-create baseline
-terraform apply -var-file=scenarios/baseline.tfvars
-```
+Use the [configuration generator](/wizard/) and select the baseline options. Its commands run preflight, save a preview, apply only after review, and verify the result. See the [Terraform](/getting-started/quick-start/) or [Bicep](/getting-started/quick-start-bicep/) quick start.

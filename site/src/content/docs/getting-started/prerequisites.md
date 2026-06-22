@@ -26,7 +26,7 @@ If you've never deployed Launchpad before, start with **Cloud Shell**. If you're
 
 First-time use prompts you to create a 5 GB Azure Files share for `~` persistence (≈ $0.05/mo). Pick **Bash** (not PowerShell).
 
-**2. Clone and deploy.**
+**2. Clone and authenticate.**
 
 ```bash
 git clone https://github.com/travishankins/azure-launchpad.git
@@ -35,11 +35,9 @@ cd azure-launchpad
 # Cloud Shell is already authenticated to your tenant.
 az account set --subscription <subscription-id>
 export ARM_SUBSCRIPTION_ID=<subscription-id>
-
-./scripts/bootstrap-state.sh
 ```
 
-Then continue with the [Terraform](/getting-started/quick-start/) or [Bicep](/getting-started/quick-start-bicep/) quick start.
+Then continue with the [Terraform](/getting-started/quick-start/) or [Bicep](/getting-started/quick-start-bicep/) quick start. Terraform users bootstrap state there; Bicep users do not need that step.
 
 **What's preinstalled in Cloud Shell** (versions move; check with `--version`):
 
@@ -101,7 +99,7 @@ export ARM_SUBSCRIPTION_ID=<subscription-id>
 | Ubuntu 24.04 | `mcr.microsoft.com/devcontainers/base:ubuntu-24.04` | Base image                                             |
 | Azure CLI    | latest, with `bicep` extension                      | `az login`, deploys, bootstrap script                  |
 | Terraform    | 1.14.9 + tflint                                     | Foundation + management-groups modules                 |
-| Node.js      | 20                                                  | Astro / Starlight docs site (`cd site && npm run dev`) |
+| Node.js      | 22                                                  | Astro / Starlight docs site (`cd site && npm run dev`) |
 | Python       | 3.12                                                | Helper scripts                                         |
 | GitHub CLI   | latest                                              | OIDC federated credential setup, repo automation       |
 | pre-commit   | latest                                              | Auto-runs `terraform fmt`, lint, etc. on commit        |
@@ -143,9 +141,18 @@ Then continue with [Local prep](#local-prep).
 
 ## Azure access
 
-- An Azure subscription where you have **Owner** at the subscription scope (needed once for the Service Principal + bootstrap RG/storage).
-- Permission to create app registrations in Microsoft Entra ID (or an existing app registration you can reuse).
-- For post-deploy site-to-site VPN wiring: knowledge of the customer's on-premises VPN device public IP, supported IKE versions, shared key handling, and the on-premises CIDR(s) that should be reachable.
+Use the least-privileged row that matches how you are deploying:
+
+| Path | Required access |
+| ---- | --------------- |
+| Interactive Bicep or Terraform foundation | `Contributor` on each target subscription |
+| Terraform state bootstrap | `Contributor` plus permission to assign roles, or `Owner`, long enough to create the backend and grant blob-data access |
+| Terraform state access | `Storage Blob Data Contributor` on the state storage account for every human or OIDC identity that runs Terraform |
+| GitHub Actions | Permission to create/reuse an Entra app registration, federated credentials, repository variables, and protected environments |
+| Management Groups | `Management Group Contributor` at Tenant Root; also `Resource Policy Contributor` when enabling policies |
+| Multi-subscription foundation | `Contributor` on connectivity, management, and landing-zone subscriptions |
+
+For post-deploy site-to-site VPN wiring, also gather the VPN device public IP, supported IKE versions, shared-key handling process, and reachable on-premises CIDRs.
 
 ## Local prep
 
@@ -168,8 +175,10 @@ This creates:
 - A resource group `rg-tfstate-<prefix>-<region>`
 - A storage account `st<prefix>tfstate<6-char-hash>`
 - A blob container `tfstate`
+- `.launchpad/backend.hcl`, an ignored local backend configuration used by `scripts/deploy.sh`
+- A `Storage Blob Data Contributor` assignment for the signed-in identity
 
-The script is idempotent — re-running it just discovers the existing resources.
+The script is idempotent. To grant the GitHub OIDC service principal access during bootstrap, also set `TFSTATE_EXTRA_PRINCIPAL_ID` to its object ID. Role-assignment creation requires one of the elevated bootstrap roles listed above; normal deployments do not.
 
 ## CI/CD prerequisites (optional)
 
@@ -177,3 +186,5 @@ If you want plan/apply to run in GitHub Actions, you also need:
 
 - An Entra ID app registration with a federated credential trusting your repo
 - The repo variables listed in [CI/CD pipeline](/reference/cicd/)
+
+The stock Actions workflows currently support single-subscription foundations. Use the generated local/Cloud Shell commands for multi-subscription foundations.

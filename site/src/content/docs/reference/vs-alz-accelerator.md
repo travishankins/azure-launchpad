@@ -14,8 +14,8 @@ This page helps you decide which one fits.
 | You have a dedicated platform team of 5+ people        | ✅                              | also fine           |
 | You'll run 50+ subscriptions across the org            | ✅                              | —                   |
 | You need every CAF pillar wired up day one             | ✅                              | —                   |
-| You want **one repo, four cost tiers, one command**    | —                               | ✅                  |
-| You want a guided wizard that emits the parameter file | —                               | ✅                  |
+| You want **one repo, four cost tiers, one guided lifecycle** | —                          | ✅                  |
+| You want a configuration generator that emits the parameter file | —                       | ✅                  |
 | Your monthly Azure spend is < $5k                      | maybe overkill                  | ✅                  |
 | You want to learn ALZ concepts without 30+ modules     | —                               | ✅                  |
 | You operate from a single hub region                   | both                            | ✅                  |
@@ -38,8 +38,8 @@ If you're an enterprise with a fully-staffed cloud platform team, **use Microsof
 | **Backup**                                              | Recovery Services Vault + policies + cross-region restore              | RSV deployed; policies left for you to add                                                                               |
 | **Monitoring**                                          | Workspace + DCRs + workbooks + alerts                                  | Workspace + diagnostic settings; DCRs/workbooks/alerts on roadmap                                                        |
 | **Governance**                                          | Full ALZ policy initiative (~80 policies)                              | Starter policy catalog in the opt-in MG module                                                                           |
-| **Tooling**                                             | Azure Portal accelerator + IaC + AzOps                                 | IaC + interactive wizard + Astro/Starlight docs site                                                                     |
-| **Time-to-deploy**                                      | Days to weeks (planning + customisation)                               | < 1 hour (wizard → tfvars → apply)                                                                                       |
+| **Tooling**                                             | Azure Portal accelerator + IaC + AzOps                                 | IaC + interactive configuration generator + Astro/Starlight docs site                                                    |
+| **Time-to-deploy**                                      | Days to weeks (planning + customisation)                               | < 1 hour for smaller scenarios (generate → preflight → preview → approve → apply → verify)                               |
 | **Lifecycle ownership**                                 | Dedicated platform team                                                | One or two part-time engineers                                                                                           |
 | **Customisation surface**                               | Very large                                                             | Small and explicit                                                                                                       |
 | **Both Terraform and Bicep, byte-for-byte equivalent?** | Two separate projects                                                  | ✅ Yes — one repo, both stacks, identical resources                                                                      |

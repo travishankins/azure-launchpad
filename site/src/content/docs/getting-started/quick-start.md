@@ -3,62 +3,58 @@ title: Quick start (Terraform)
 description: Deploy the baseline scenario with Terraform in under an hour.
 ---
 
-If you just want to see something work, follow these five steps. Prefer Microsoft's native IaC? See [Quick start (Bicep)](/getting-started/quick-start-bicep/) for the equivalent flow.
+This path always follows the same lifecycle: **configure → preflight → plan → review → apply saved plan → verify**. Prefer Microsoft's native IaC? See [Quick start (Bicep)](/getting-started/quick-start-bicep/).
 
 > **No-install option** — every command below also works in [Azure Cloud Shell](https://shell.azure.com) (Bash). Cloud Shell is pre-authenticated and ships with `az`, `terraform`, and `git`. See [Prerequisites → Option A: Cloud Shell](/getting-started/prerequisites/#option-a--azure-cloud-shell) for the full walkthrough and Terraform-version pinning tip.
 
-## 1. Bootstrap the state backend
+## 1. Clone, authenticate, and configure
 
 ```bash
 git clone https://github.com/travishankins/azure-launchpad.git
 cd azure-launchpad
 az login
 export ARM_SUBSCRIPTION_ID=<subscription-id>
+```
+
+Use the [configuration generator](/wizard/) and save its Terraform output as `infra/terraform/foundation/scenarios/wizard.auto.tfvars`.
+
+## 2. Bootstrap state once
+
+```bash
 ./scripts/bootstrap-state.sh
 ```
 
-The script selects `ARM_SUBSCRIPTION_ID` if it is set, creates the backend resources, and prints the exact backend values to use next. Copy the printed `storage_account_name`.
+This creates the storage backend, grants the signed-in identity `Storage Blob Data Contributor`, and writes the ignored `.launchpad/backend.hcl`. See [Prerequisites → Azure access](/getting-started/prerequisites/#azure-access) for the one-time role-assignment requirement.
 
-## 2. Initialize Terraform
-
-```bash
-cd infra/terraform/foundation
-terraform init \
-  -backend-config="resource_group_name=rg-tfstate-contoso-wcus" \
-  -backend-config="storage_account_name=<from step 1>" \
-  -backend-config="container_name=tfstate" \
-  -backend-config="key=foundation.baseline.tfstate"
-```
-
-## 3. Pick a scenario (workspace)
+## 3. Preflight and save a plan
 
 ```bash
-terraform workspace select -or-create baseline
+./scripts/deploy.sh plan --iac terraform --mode single \
+  --subscription "$ARM_SUBSCRIPTION_ID" \
+  --scenario baseline \
+  --config infra/terraform/foundation/scenarios/wizard.auto.tfvars
 ```
 
-## 4. Plan
+The command checks tools, authentication, subscription access, configuration, and backend setup before creating `.launchpad/plans/foundation.baseline.single.tfplan`.
+
+## 4. Review, then apply only that plan
 
 ```bash
-terraform plan \
-  -var "subscription_id=$ARM_SUBSCRIPTION_ID" \
-  -var-file=scenarios/baseline.tfvars \
-  -out=tfplan
+./scripts/deploy.sh apply --iac terraform --mode single \
+  --subscription "$ARM_SUBSCRIPTION_ID" \
+  --scenario baseline \
+  --config infra/terraform/foundation/scenarios/wizard.auto.tfvars \
+  --plan-file .launchpad/plans/foundation.baseline.single.tfplan
 ```
 
-Review the plan output carefully.
+`apply` refuses to run without a saved plan.
 
-## 5. Apply
+## 5. Verify
 
 ```bash
-terraform apply tfplan
+./scripts/verify.sh --mode single \
+  --subscription "$ARM_SUBSCRIPTION_ID" \
+  --scenario baseline --name-prefix contoso --region-short wcus
 ```
 
-That's it. To switch scenarios:
-
-```bash
-terraform workspace select -or-create firewall
-terraform plan -var "subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/firewall.tfvars
-terraform apply -var "subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/firewall.tfvars
-```
-
-> **Tip** — use the [configuration generator](/wizard/) to generate a `wizard.auto.tfvars` file tailored to your customer's needs.
+To switch scenarios, regenerate the configuration and repeat plan/apply with the matching scenario. Each scenario and deployment mode gets a separate workspace, state key, and plan filename.

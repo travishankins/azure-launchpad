@@ -28,4 +28,4 @@ Every scenario shares the same hub-spoke topology. You only add what the custome
 - **Both?** → `full`.
 - **Neither?** → `baseline`.
 
-The [wizard](/wizard/) walks you through this in 30 seconds and emits a tfvars file.
+The [configuration generator](/wizard/) walks you through this in about 30 seconds and emits a parameter file plus preview, apply, and verification commands.

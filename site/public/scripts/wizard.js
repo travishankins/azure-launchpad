@@ -401,43 +401,43 @@ function buildCommands(answers) {
   const scenario = deriveScenario(answers);
   const isMulti = resolveDeploymentMode(answers) === 'multi';
   const bootstrapSub = isMulti ? answers.management_subscription_id : answers.subscription_id;
+  const modeArgs = isMulti
+    ? `--mode multi \\
+  --connectivity-sub ${answers.connectivity_subscription_id} \\
+  --management-sub ${answers.management_subscription_id} \\
+  --landingzone-sub ${answers.landingzone_subscription_id}`
+    : `--mode single --subscription ${answers.subscription_id}`;
+  const planFile = `.launchpad/plans/foundation.${scenario}.${isMulti ? 'multi' : 'single'}.tfplan`;
   return `# 1. One-time: create the Azure Storage backend for Terraform state${isMulti ? `\n#    (multi-sub mode: state lives in the MANAGEMENT sub)` : ''}
 export ARM_SUBSCRIPTION_ID=${bootstrapSub}
 ./scripts/bootstrap-state.sh
-# (note the storage_account_name printed at the end)
 
-cd infra/terraform/foundation
+# 2. Preflight + save a reviewable plan
+./scripts/deploy.sh plan --iac terraform ${modeArgs} \\
+  --scenario ${scenario} \\
+  --config infra/terraform/foundation/scenarios/wizard.auto.tfvars
 
-# 2. Initialize against the backend (replace SA name with bootstrap output)
-terraform init \\
-  -backend-config="resource_group_name=rg-tfstate-${answers.name_prefix}-${shortRegion(answers.location)}" \\
-  -backend-config="storage_account_name=<from-bootstrap>" \\
-  -backend-config="container_name=tfstate" \\
-  -backend-config="key=foundation.${scenario}${isMulti ? '.multi' : ''}.tfstate"
+# 3. After review, apply only the saved plan
+./scripts/deploy.sh apply --iac terraform ${modeArgs} \\
+  --scenario ${scenario} \\
+  --config infra/terraform/foundation/scenarios/wizard.auto.tfvars \\
+  --plan-file ${planFile}
 
-# 3. Workspace per scenario
-terraform workspace select -or-create ${scenario}${isMulti ? '-multi' : ''}
-
-# 4. Plan and apply with the generated tfvars
-terraform plan  -var-file=wizard.auto.tfvars -out=wizard.tfplan
-# Review the plan above, then apply the saved plan:
-terraform apply wizard.tfplan
+# 4. Verify the expected foundation resources
+./scripts/verify.sh ${modeArgs} --scenario ${scenario} \\
+  --name-prefix ${answers.name_prefix} --region-short ${shortRegion(answers.location)}
 `;
 }
 
 function buildBicepCommands(answers) {
   const scenario = deriveScenario(answers);
   if (resolveDeploymentMode(answers) === 'multi') {
-    // Bicep multi-sub now supports all four scenarios. The wrapper script
-    // runs the connectivity → landingzone → connectivity peer-back →
-    // management sequence and threads firewall/VPN outputs cross-sub.
     return `# Multi-subscription Bicep deployment (scenario: ${scenario})
 
 az login
 
-# One command runs all 4 deploy steps in the right order
-# (connectivity → landingzone → connectivity peer-back → management):
-./scripts/deploy-multi-sub.sh \\
+# 1. Preview every layer without creating resources
+./scripts/deploy.sh plan --iac bicep --mode multi \\
   --connectivity-sub ${answers.connectivity_subscription_id} \\
   --management-sub   ${answers.management_subscription_id} \\
   --landingzone-sub  ${answers.landingzone_subscription_id} \\
@@ -445,23 +445,43 @@ az login
   --name-prefix ${answers.name_prefix} \\
   --region ${answers.location} \\
   --region-short ${shortRegion(answers.location)}
+
+# 2. After review, deploy all layers in dependency order
+./scripts/deploy.sh apply --iac bicep --mode multi \\
+  --connectivity-sub ${answers.connectivity_subscription_id} \\
+  --management-sub   ${answers.management_subscription_id} \\
+  --landingzone-sub  ${answers.landingzone_subscription_id} \\
+  --scenario ${scenario} \\
+  --name-prefix ${answers.name_prefix} \\
+  --region ${answers.location} \\
+  --region-short ${shortRegion(answers.location)}
+
+# 3. Verify the expected foundation resources
+./scripts/verify.sh --mode multi \\
+  --connectivity-sub ${answers.connectivity_subscription_id} \\
+  --management-sub ${answers.management_subscription_id} \\
+  --landingzone-sub ${answers.landingzone_subscription_id} \\
+  --scenario ${scenario} --name-prefix ${answers.name_prefix} \\
+  --region-short ${shortRegion(answers.location)}
 `;
   }
-  return `# 1. Sign in to Azure and pin the subscription
+  return `# 1. Sign in and preview the deployment
 az login
-az account set --subscription ${answers.subscription_id}
+./scripts/deploy.sh plan --iac bicep --mode single \\
+  --subscription ${answers.subscription_id} --scenario ${scenario} \\
+  --config infra/bicep/foundation/scenarios/wizard.bicepparam \\
+  --region ${answers.location}
 
-# 2. Preview the deployment (what-if)
-az deployment sub what-if \\
-  --location ${answers.location} \\
-  --name foundation-${scenario} \\
-  --parameters infra/bicep/foundation/scenarios/wizard.bicepparam
+# 2. After review, deploy the same parameter file
+./scripts/deploy.sh apply --iac bicep --mode single \\
+  --subscription ${answers.subscription_id} --scenario ${scenario} \\
+  --config infra/bicep/foundation/scenarios/wizard.bicepparam \\
+  --region ${answers.location}
 
-# 3. Deploy
-az deployment sub create \\
-  --location ${answers.location} \\
-  --name foundation-${scenario} \\
-  --parameters infra/bicep/foundation/scenarios/wizard.bicepparam
+# 3. Verify the expected foundation resources
+./scripts/verify.sh --mode single --subscription ${answers.subscription_id} \\
+  --scenario ${scenario} --name-prefix ${answers.name_prefix} \\
+  --region-short ${shortRegion(answers.location)}
 `;
 }
 
@@ -662,7 +682,7 @@ function render(root) {
     }
 
     root.appendChild(el('p', { class: 'wizard-intro' },
-      'Answer a few questions about your environment. The wizard recommends a scenario, generates a ready-to-use parameter file (Terraform tfvars or Bicep bicepparam), and gives you the exact CLI commands to deploy it.',
+      'Answer a few questions about your environment. The generator recommends a scenario, creates a ready-to-use parameter file (Terraform tfvars or Bicep bicepparam), and gives you exact commands to preview, deploy, and verify it.',
     ));
 
     const q = QUESTIONS[state.step];
@@ -837,9 +857,7 @@ function render(root) {
 
     const steps = [
       `Save the generated ${platformLabel} parameter file into the repo at ${paramFolder}/${paramFileName}.`,
-      isBicep
-        ? `Run az deployment sub what-if and az deployment sub create against your subscription.`
-        : `Run terraform init / plan / apply against your subscription.`,
+      `Run the shared preflight and preview command, review the result, then approve the apply and verification commands.`,
     ];
     if (hasMg) {
       const mgFolder = isBicep ? 'infra/bicep/management-groups/scenarios' : 'infra/terraform/management-groups';

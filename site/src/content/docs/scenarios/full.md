@@ -29,10 +29,7 @@ Everything from [Firewall](/scenarios/firewall/) **and** [VPN](/scenarios/vpn/):
 
 ## Deploy
 
-```bash
-terraform workspace select -or-create full
-terraform apply -var-file=scenarios/full.tfvars
-```
+Use the [configuration generator](/wizard/) and choose both managed firewall egress and site-to-site connectivity. Its commands preview, deploy, and verify the foundation; then continue with [Post-deploy VPN connection](/reference/vpn-post-deploy/).
 
 ## Operational notes
 

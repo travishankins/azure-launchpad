@@ -17,9 +17,30 @@ env:
   WORKING_DIR: infra/bicep/foundation
 
 jobs:
-  apply:
+  preview:
     runs-on: ubuntu-latest
-    environment: apply
+    environment: plan
+    steps:
+      - uses: actions/checkout@v7
+      - name: Azure login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: az deployment sub what-if
+        env:
+          SCENARIO: ${{ github.event.inputs.scenario || 'baseline' }}
+        run: |
+          az deployment sub what-if \
+            --location ${{ vars.AZURE_DEFAULT_LOCATION || 'westcentralus' }} \
+            --name foundation-${SCENARIO}-${{ github.run_number }} \
+            --parameters ${{ env.WORKING_DIR }}/scenarios/${SCENARIO}.bicepparam
+
+  apply:
+    needs: preview
+    runs-on: ubuntu-latest
+    environment: apply # protected: approval happens after what-if
     steps:
       - uses: actions/checkout@v7
       - name: Azure login (OIDC)

@@ -22,9 +22,9 @@ env:
   WORKING_DIR: infra/terraform/foundation
 
 jobs:
-  apply:
+  plan:
     runs-on: ubuntu-latest
-    environment: prod # protected: requires manual approval
+    environment: plan # unprotected; OIDC credential is scoped to this environment
     steps:
       - uses: actions/checkout@v7
       - uses: hashicorp/setup-terraform@v4
@@ -50,13 +50,57 @@ jobs:
       - name: terraform workspace
         run: terraform -chdir=${{ env.WORKING_DIR }} workspace select -or-create ${{
           inputs.scenario }}
-      - name: terraform apply
+      - name: terraform plan
         env:
           ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
         run: |
-          terraform -chdir=${{ env.WORKING_DIR }} apply \
-            -auto-approve \
-            -var-file=scenarios/${{ inputs.scenario }}.tfvars
+          terraform -chdir=${{ env.WORKING_DIR }} plan \
+            -var-file=scenarios/${{ inputs.scenario }}.tfvars \
+            -out=tfplan
+      - uses: actions/upload-artifact@v7
+        with:
+          name: approved-tfplan
+          path: ${{ env.WORKING_DIR }}/tfplan
+          retention-days: 1
+
+  apply:
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: prod # protected: approval happens after the plan is available
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Azure login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: terraform init
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          terraform -chdir=${{ env.WORKING_DIR }} init \
+            -backend-config="resource_group_name=${{ vars.TFSTATE_RG }}" \
+            -backend-config="storage_account_name=${{ vars.TFSTATE_SA }}" \
+            -backend-config="container_name=${{ vars.TFSTATE_CONTAINER }}" \
+            -backend-config="key=foundation.${{ inputs.scenario }}.tfstate"
+      - name: terraform workspace
+        run: terraform -chdir=${{ env.WORKING_DIR }} workspace select -or-create ${{ inputs.scenario }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: approved-tfplan
+          path: ${{ env.WORKING_DIR }}
+      - name: terraform apply saved plan
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: terraform -chdir=${{ env.WORKING_DIR }} apply tfplan

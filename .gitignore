@@ -13,6 +13,9 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# Local deployment plans and generated backend configuration
+.launchpad/
+
 # Keep lock file (committed for reproducibility)
 !.terraform.lock.hcl
 

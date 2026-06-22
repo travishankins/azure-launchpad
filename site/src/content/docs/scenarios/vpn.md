@@ -60,7 +60,4 @@ resource "azurerm_virtual_network_gateway_connection" "s2s" {
 
 ## Deploy
 
-```bash
-terraform workspace select -or-create vpn
-terraform apply -var-file=scenarios/vpn.tfvars
-```
+Use the [configuration generator](/wizard/) and choose site-to-site connectivity. Its commands preview, deploy, and verify the gateway; then continue with [Post-deploy VPN connection](/reference/vpn-post-deploy/).

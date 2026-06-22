@@ -16,7 +16,7 @@ Azure Launchpad is a small, opinionated landing-zone starter. To stay small and 
 - **Single region by default.** Multi-region failover, paired-region replication topologies, and global front-door patterns are not built in. You can deploy multiple instances per region, but cross-region wiring is on you.
 - **No Defender for Cloud / Sentinel packs (yet).** Workspace and Recovery Services Vault are deployed and ready for them, but plan-level Defender enablement and Sentinel content packs are not included.
 - **No automated drift remediation.** Plans surface drift; reconciling it is a human decision.
-- **No customer-data ingest.** The site has no analytics, telemetry, or third-party scripts. The wizard runs entirely in the browser.
+- **No customer-data ingest.** The site has no analytics, telemetry, or third-party scripts. The configuration generator runs entirely in the browser.
 
 ## Things that look like gaps but aren't
 

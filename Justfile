@@ -34,13 +34,14 @@ tflint:
 
 # Plan a scenario (baseline | firewall | vpn | full). Requires Azure auth + bootstrapped state.
 plan scenario:
-    cd {{tf_dir}} && terraform workspace select -or-create {{scenario}} && \
-        terraform plan -var-file=scenarios/{{scenario}}.tfvars -var "subscription_id={{sub}}"
+    ./scripts/deploy.sh plan --iac terraform --mode single --scenario {{scenario}} \
+        --subscription {{sub}} --config {{tf_dir}}/scenarios/{{scenario}}.tfvars
 
 # Apply a scenario.
-apply scenario:
-    cd {{tf_dir}} && terraform workspace select -or-create {{scenario}} && \
-        terraform apply -var-file=scenarios/{{scenario}}.tfvars -var "subscription_id={{sub}}"
+apply scenario plan_file:
+    ./scripts/deploy.sh apply --iac terraform --mode single --scenario {{scenario}} \
+        --subscription {{sub}} --config {{tf_dir}}/scenarios/{{scenario}}.tfvars \
+        --plan-file {{plan_file}}
 
 # Destroy a scenario.
 destroy scenario:
@@ -60,17 +61,15 @@ bicep-build:
 
 # What-if a Bicep scenario against the current subscription.
 bicep-whatif scenario region="westcentralus":
-    az deployment sub what-if \
-      --location {{region}} \
-      --name foundation-{{scenario}} \
-      --parameters infra/bicep/foundation/scenarios/{{scenario}}.bicepparam
+    ./scripts/deploy.sh plan --iac bicep --mode single --scenario {{scenario}} \
+      --subscription {{sub}} --region {{region}} \
+      --config infra/bicep/foundation/scenarios/{{scenario}}.bicepparam
 
 # Deploy a Bicep scenario.
 bicep-deploy scenario region="westcentralus":
-    az deployment sub create \
-      --location {{region}} \
-      --name foundation-{{scenario}} \
-      --parameters infra/bicep/foundation/scenarios/{{scenario}}.bicepparam
+    ./scripts/deploy.sh apply --iac bicep --mode single --scenario {{scenario}} \
+      --subscription {{sub}} --region {{region}} \
+      --config infra/bicep/foundation/scenarios/{{scenario}}.bicepparam
 
 # --------------------------------------------------------------------------- #
 # Docs site
@@ -84,7 +83,6 @@ docs:
 docs-build:
     cd site && npm install && npm run build
 
-# Run configuration generator (wizard) unit tests.
 # Run configuration generator (wizard) unit tests.
 wizard-test:
     node --test site/public/scripts/wizard.test.js

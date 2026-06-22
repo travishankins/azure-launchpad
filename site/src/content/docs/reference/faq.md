@@ -121,9 +121,9 @@ Full step-by-step is on the [CI/CD pipeline](/reference/cicd/) page (steps 2 and
 
 No — the same Entra app registration / OIDC identity works for both. The only difference is which **GitHub environment** the apply runs under (`prod` for Terraform, `apply` for Bicep), and you add a federated credential per environment.
 
-### Can the wizard's output be committed to a public repo?
+### Can the generator's output be committed to a public repo?
 
-Subscription IDs and tenant IDs are **not secrets** on their own (they appear in every resource ID), but they're useful for phishing reconnaissance — treat them as internal. Best practice: keep `*.auto.tfvars` and `*.bicepparam` out of public repos, or use a private repo. The wizard reminds you of this on the result page.
+Subscription IDs and tenant IDs are **not secrets** on their own (they appear in every resource ID), but they're useful for phishing reconnaissance — treat them as internal. Best practice: keep `*.auto.tfvars` and `*.bicepparam` out of public repos, or use a private repo. The generator reminds you of this on the result page.
 
 ### How do I update AVM module versions (Terraform)?
 

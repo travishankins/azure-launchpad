@@ -227,9 +227,10 @@ describe('buildCommands', () => {
       location: 'eastus',
       name_prefix: 'test',
     });
-    assert.match(out, /-out=wizard\.tfplan/);
-    assert.match(out, /terraform apply wizard\.tfplan/);
-    assert.ok(!out.includes('terraform apply -var-file'));
+    assert.match(out, /deploy\.sh plan --iac terraform/);
+    assert.match(out, /deploy\.sh apply --iac terraform/);
+    assert.match(out, /--plan-file \.launchpad\/plans\/foundation\.baseline\.single\.tfplan/);
+    assert.match(out, /verify\.sh --mode single/);
   });
 });
 
@@ -237,7 +238,7 @@ describe('buildCommands', () => {
 // buildBicepCommands
 // ---------------------------------------------------------------------------
 describe('buildBicepCommands', () => {
-  test('single-sub includes what-if preview step', () => {
+  test('single-sub previews, applies, and verifies through the shared scripts', () => {
     const out = buildBicepCommands({
       intent: 'production',
       deployment_mode: 'single',
@@ -247,11 +248,12 @@ describe('buildBicepCommands', () => {
       location: 'eastus',
       name_prefix: 'test',
     });
-    assert.match(out, /what-if/);
-    assert.match(out, /deployment sub create/);
+    assert.match(out, /deploy\.sh plan --iac bicep --mode single/);
+    assert.match(out, /deploy\.sh apply --iac bicep --mode single/);
+    assert.match(out, /verify\.sh --mode single/);
   });
 
-  test('multi-sub uses deploy-multi-sub.sh wrapper', () => {
+  test('multi-sub previews, applies, and verifies through the shared scripts', () => {
     const out = buildBicepCommands({
       intent: 'platform',
       deployment_mode: 'multi',
@@ -263,7 +265,9 @@ describe('buildBicepCommands', () => {
       location: 'eastus',
       name_prefix: 'test',
     });
-    assert.match(out, /deploy-multi-sub\.sh/);
+    assert.match(out, /deploy\.sh plan --iac bicep --mode multi/);
+    assert.match(out, /deploy\.sh apply --iac bicep --mode multi/);
+    assert.match(out, /verify\.sh --mode multi/);
     assert.match(out, /--scenario firewall/);
   });
 });

@@ -3,7 +3,7 @@ title: Glossary
 description: Quick definitions of every Azure, networking, and governance term used across the Azure Launchpad docs.
 ---
 
-A short, opinionated glossary of every term you'll see in this repo. Linked from scenario pages, the wizard, and the FAQ.
+A short, opinionated glossary of every term you'll see in this repo. Linked from scenario pages, the configuration generator, and the FAQ.
 
 ## Azure landing zone (ALZ)
 
