@@ -3,14 +3,14 @@
 //
 // Uses Node's built-in test runner (no dependencies required).
 
-const { test, describe } = require('node:test');
-const assert = require('node:assert/strict');
+import { test, describe } from 'node:test';
+import assert from 'node:assert/strict';
 
 // Provide a minimal DOM shim so the module can load without a browser.
-global.document = { getElementById: () => null, createElement: () => ({}) };
-global.URL = { createObjectURL: () => '' };
+globalThis.document = { getElementById: () => null, createElement: () => ({}) };
+globalThis.URL.createObjectURL = () => '';
 
-const {
+import {
   QUESTIONS,
   deriveScenario,
   resolveDeploymentMode,
@@ -20,7 +20,7 @@ const {
   buildBicepParams,
   buildCommands,
   buildBicepCommands,
-} = require('./wizard.js');
+} from './wizard.js';
 
 // ---------------------------------------------------------------------------
 // deriveScenario
@@ -99,6 +99,19 @@ describe('isStepSkipped', () => {
   test('advanced fields hidden when advanced_mode is not yes', () => {
     assert.equal(isStepSkipped('log_retention_days', { advanced_mode: 'no', intent: 'production' }), true);
     assert.equal(isStepSkipped('budget_amount', { advanced_mode: 'no', intent: 'production' }), true);
+  });
+
+  test('evaluate skips egress and hybrid (forces baseline)', () => {
+    assert.equal(isStepSkipped('egress', { intent: 'evaluate' }), true);
+    assert.equal(isStepSkipped('hybrid', { intent: 'evaluate' }), true);
+  });
+
+  test('evaluate skips mg_enable', () => {
+    assert.equal(isStepSkipped('mg_enable', { intent: 'evaluate' }), true);
+  });
+
+  test('platform defaults mg_enable to yes', () => {
+    assert.equal(isStepSkipped('mg_enable', { intent: 'platform' }), true);
   });
 });
 

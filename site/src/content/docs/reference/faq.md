@@ -12,7 +12,7 @@ Both produce **the exact same Azure architecture** (identical RGs, networking, s
 - **Terraform** — best if you're multi-cloud, already use HashiCorp tooling, or want a single state file you can `import` and refactor freely. Brings the AVM ecosystem and a mature testing story (`terraform test`).
 - **Bicep** — best if you're Microsoft-only, want zero extra tooling beyond `az`, prefer ARM-native deployments tracked in the portal, and don't want to manage a remote state backend.
 
-The [deployment wizard](/wizard/) asks this as question #1 and emits the matching parameter file + commands.
+The [configuration generator](/wizard/) asks this as question #2 and emits the matching parameter file + commands.
 
 ### Can I switch from Terraform to Bicep (or vice versa) later?
 

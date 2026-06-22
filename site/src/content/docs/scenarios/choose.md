@@ -52,4 +52,4 @@ flowchart TD
 | Both egress filtering and hybrid      | [Full](/scenarios/full/)                          |
 | Separate subs per ALZ layer           | [Multi-subscription](/scenarios/multi-subscription/) |
 
-Once you've picked a scenario, the [deployment wizard](/wizard/) generates the matching `tfvars` or `bicepparam` file.
+Once you've picked a scenario, the [configuration generator](/wizard/) generates the matching `tfvars` or `bicepparam` file.

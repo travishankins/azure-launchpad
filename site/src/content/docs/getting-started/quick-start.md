@@ -61,4 +61,4 @@ terraform plan -var "subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/f
 terraform apply -var "subscription_id=$ARM_SUBSCRIPTION_ID" -var-file=scenarios/firewall.tfvars
 ```
 
-> **Tip** — use the [deployment wizard](/wizard/) to generate a `wizard.auto.tfvars` file tailored to your customer's needs.
+> **Tip** — use the [configuration generator](/wizard/) to generate a `wizard.auto.tfvars` file tailored to your customer's needs.

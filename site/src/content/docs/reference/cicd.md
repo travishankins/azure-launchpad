@@ -131,7 +131,7 @@ az ad app federated-credential create --id $APP_ID --parameters '{
 | ------------- | ---------------------------------------------- |
 | `prod`        | `terraform-apply.yml`                          |
 | `apply`       | `bicep-apply.yml`                              |
-| `prod-tenant` | `terraform-mg-apply.yml`, `bicep-mg-apply.yml` |
+| `apply-mg`    | `terraform-mg-apply.yml`, `bicep-mg-apply.yml` |
 
 This forces a human approval click before any apply runs against your subscription or tenant.
 
@@ -153,7 +153,7 @@ This forces a human approval click before any apply runs against your subscripti
 1. Open a PR that adds or edits a `.bicepparam` under `infra/bicep/foundation/scenarios/`.
 2. `bicep-plan.yml` runs `what-if` and posts the diff as a PR comment.
 3. Merge the PR.
-4. **Actions → bicep-apply → Run workflow**, pick the scenario, click **Run** (or just push to `main` — it runs automatically with the `baseline` scenario by default).
+4. **Actions → bicep-apply → Run workflow**, pick the scenario, click **Run**.
 5. A reviewer approves the `apply` environment gate.
 6. The job runs `az deployment sub create`. ~10–25 min depending on scenario.
 
@@ -165,7 +165,7 @@ This forces a human approval click before any apply runs against your subscripti
 2. The matching `*-mg-plan` workflow runs.
 3. Merge the PR.
 4. **Actions → terraform-mg-apply** (or **bicep-mg-apply**) **→ Run workflow** → **Run**.
-5. A reviewer approves the `prod-tenant` environment gate.
+5. A reviewer approves the `apply-mg` environment gate.
 6. The job creates / updates the management-group hierarchy and any opt-in policy assignments.
 
 ---

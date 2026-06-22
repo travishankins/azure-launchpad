@@ -27,7 +27,7 @@ export default defineConfig({
     starlight({
       title: '🚀 Azure Launchpad (SMB / SMEC Edition)',
       description:
-        'Deploy a hub-spoke Azure landing zone with either Terraform or Bicep, plus an interactive deployment wizard.',
+        'Deploy a hub-spoke Azure landing zone with either Terraform or Bicep, plus an interactive configuration generator.',
       social: {
         github: `https://github.com/${OWNER}/${REPO}`,
       },
@@ -36,7 +36,7 @@ export default defineConfig({
           label: 'Start here',
           items: [
             { label: 'Overview', link: '/' },
-            { label: 'Deployment wizard', link: '/wizard/' },
+            { label: 'Configuration generator', link: '/wizard/' },
           ],
         },
         {

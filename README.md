@@ -17,7 +17,7 @@ Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** 
 | `vpn`      | ~$327           | Baseline + VPN Gateway (`VpnGw2AZ`) + gateway transit                       |
 | `full`     | ~$616           | Firewall + VPN combined                                                     |
 
-📘 **Full docs + interactive deployment wizard:** [azurelaunchpad.com](https://azurelaunchpad.com/) — try the [deployment wizard](https://azurelaunchpad.com/wizard/). Source for the site lives in [`site/`](./site/) and is published by [`.github/workflows/site-deploy.yml`](./.github/workflows/site-deploy.yml).
+📘 **Full docs + interactive configuration generator:** [azurelaunchpad.com](https://azurelaunchpad.com/) — try the [configuration generator](https://azurelaunchpad.com/wizard/). Source for the site lives in [`site/`](./site/) and is published by [`.github/workflows/site-deploy.yml`](./.github/workflows/site-deploy.yml).
 
 > ℹ️ See [Non-goals](https://azurelaunchpad.com/reference/non-goals/) for what Launchpad intentionally does *not* do.
 
@@ -85,7 +85,7 @@ infra/terraform/foundation/
   ├── *.tf           Root module composed from feature files
   ├── scenarios/     Per-scenario tfvars
   └── tests/         .tftest.hcl plan-mode tests (mock providers)
-site/                Astro Starlight docs + deployment wizard (deploys to GitHub Pages)
+site/                Astro Starlight docs + configuration generator (deploys to GitHub Pages)
 ```
 
 ## CI/CD

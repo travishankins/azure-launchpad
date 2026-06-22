@@ -70,7 +70,7 @@ The `~/.tfenv` directory persists in your clouddrive across sessions.
 - **20-minute idle timeout.** Long applies (e.g. firewall + VPN scenarios) usually finish in under 20 min, but if your tunnel drops mid-apply, just re-run — Terraform/Bicep are both idempotent.
 - **No outbound to private endpoints.** If you've already deployed and the workload is locked down behind a private endpoint, you can't `curl` it from Cloud Shell unless it's on a peered VNet (Cloud Shell supports VNet integration; out of scope here).
 - **Editor.** `code .` opens the in-shell Monaco editor (read-write on `~`). Good enough for tweaking `.tfvars` / `.bicepparam`.
-- **No GUI for the wizard.** The [deployment wizard](/wizard/) runs in your browser at azurelaunchpad.com — generate the file there, paste it into Cloud Shell.
+- **No GUI for the generator.** The [configuration generator](/wizard/) runs in your browser at azurelaunchpad.com — generate the file there, paste it into Cloud Shell.
 
 ## Option B — GitHub Codespaces
 

@@ -33,7 +33,7 @@ If you discover a security vulnerability in **Azure Launchpad (SMB / SMEC Editio
 In scope:
 
 - Terraform and Bicep modules in [`infra/`](infra/)
-- The deployment wizard in [`site/public/scripts/wizard.js`](site/public/scripts/wizard.js) (in particular: anything that could leak `subscription_id` / `tenant_id` / on-prem CIDRs to a third party)
+- The configuration generator in [`site/public/scripts/wizard.js`](site/public/scripts/wizard.js) (in particular: anything that could leak `subscription_id` / `tenant_id` / on-prem CIDRs to a third party)
 - GitHub Actions workflows in [`.github/workflows/`](.github/workflows/) (OIDC misconfig, secret exfiltration, supply chain)
 - The bootstrap script [`scripts/bootstrap-state.sh`](scripts/bootstrap-state.sh)
 

@@ -85,6 +85,7 @@ docs-build:
     cd site && npm install && npm run build
 
 # Run configuration generator (wizard) unit tests.
+# Run configuration generator (wizard) unit tests.
 wizard-test:
     node --test site/public/scripts/wizard.test.js
 
@@ -97,5 +98,5 @@ pre-commit:
     pre-commit run --all-files
 
 # Run the same checks CI does, locally.
-ci: fmt validate test bicep-build docs-build
+ci: fmt validate test bicep-build wizard-test docs-build
     @echo "All local CI checks passed."
