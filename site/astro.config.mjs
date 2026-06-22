@@ -28,9 +28,9 @@ export default defineConfig({
       title: '🚀 Azure Launchpad (SMB / SMEC Edition)',
       description:
         'Deploy a hub-spoke Azure landing zone with either Terraform or Bicep, plus an interactive configuration generator.',
-      social: {
-        github: `https://github.com/${OWNER}/${REPO}`,
-      },
+      social: [
+        { icon: 'github', label: 'GitHub', href: `https://github.com/${OWNER}/${REPO}` },
+      ],
       sidebar: [
         {
           label: 'Start here',
