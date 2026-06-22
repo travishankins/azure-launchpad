@@ -874,7 +874,7 @@ az deployment tenant what-if \
 cd infra/terraform/management-groups
 
 terraform init \
-  -backend-config="\${REPO_ROOT}/.launchpad/backend.hcl" \
+  -backend-config="../../../.launchpad/backend.hcl" \
   -backend-config="key=management-groups.tfstate"
 
 terraform plan -var-file=mg.auto.tfvars -out=mg.tfplan`;
@@ -1040,7 +1040,7 @@ function render(root) {
       fieldset.appendChild(wrap);
       input = wrap;
     } else if (q.type === 'select') {
-      const sel = el('select', { id: q.id, name: q.id });
+      const sel = el('select', { id: q.id, name: q.id, 'aria-label': q.label });
       q.options.forEach((opt) => {
         const o = el('option', { value: opt.value }, opt.label);
         if ((state.answers[q.id] || q.default) === opt.value) o.selected = true;
@@ -1294,7 +1294,16 @@ function render(root) {
         ));
         checklist.appendChild(el('li', {}, 'Set repository variables: ', el('code', {}, 'AZURE_CLIENT_ID'), ', ', el('code', {}, 'AZURE_TENANT_ID'), ', ', el('code', {}, 'AZURE_SUBSCRIPTION_ID'), '.'));
         if (!isBicep) {
-          checklist.appendChild(el('li', {}, 'Set additional variables: ', el('code', {}, 'TFSTATE_RG'), ', ', el('code', {}, 'TFSTATE_SA'), ', ', el('code', {}, 'TFSTATE_CONTAINER'), '.'));
+          checklist.appendChild(el('li', {},
+            'Bootstrap the Terraform state backend (run once locally): ',
+            el('code', {}, `ARM_SUBSCRIPTION_ID=<sub> PREFIX=${state.answers.name_prefix} LOCATION=${state.answers.location} REGION_SHORT=${shortRegion(state.answers.location)} ./scripts/bootstrap-state.sh`),
+          ));
+          checklist.appendChild(el('li', {},
+            'Grant the OIDC service principal ',
+            el('code', {}, 'Storage Blob Data Contributor'),
+            ' on the state storage account (', el('code', {}, 'TFSTATE_EXTRA_PRINCIPAL_ID'), ' in bootstrap, or assign manually).',
+          ));
+          checklist.appendChild(el('li', {}, 'Set additional variables: ', el('code', {}, 'TFSTATE_RG'), ', ', el('code', {}, 'TFSTATE_SA'), ', ', el('code', {}, 'TFSTATE_CONTAINER'), ' (from bootstrap output).'));
         }
         checklist.appendChild(el('li', {},
           'Update ', el('code', {}, ciFileName), ' with your values (do ',
@@ -1302,9 +1311,57 @@ function render(root) {
           isBicep ? '' : ' — the workflow injects it from ', isBicep ? '' : el('code', {}, 'AZURE_SUBSCRIPTION_ID'),
           isBicep ? ':' : '):',
         ));
-        const ciSnippet = isBicep
-          ? `// Update in ${ciFileName}\nusing '../main.bicep'\n\nparam scenario = '${scenario}'\nparam location = '${state.answers.location}'\nparam namePrefix = '${state.answers.name_prefix}'`
-          : `# Update in ${ciFileName}\nscenario    = "${scenario}"\nlocation    = "${state.answers.location}"\nname_prefix = "${state.answers.name_prefix}"`;
+        // Build CI-safe snippet including advanced choices (but NOT subscription_id)
+        let ciSnippet;
+        if (isBicep) {
+          const ciLines = [
+            `// Update in ${ciFileName}`,
+            `using '../main.bicep'`,
+            ``,
+            `param scenario = '${scenario}'`,
+            `param location = '${state.answers.location}'`,
+            `param namePrefix = '${state.answers.name_prefix}'`,
+          ];
+          if (state.answers.advanced_mode === 'yes') {
+            if (state.answers.log_retention_days && state.answers.log_retention_days !== '30') {
+              ciLines.push(`param logRetentionDays = ${state.answers.log_retention_days}`);
+            }
+            if (state.answers.budget_amount) {
+              const emails = (state.answers.budget_alert_emails || '').split(',').map(s => s.trim()).filter(Boolean);
+              ciLines.push(`param budgetEnabled = true`);
+              ciLines.push(`param budgetAmount = ${state.answers.budget_amount}`);
+              ciLines.push(`param budgetAlertEmails = [${emails.map(e => `'${e}'`).join(', ')}]`);
+            }
+            if (state.answers.workbook_enabled === 'yes') {
+              ciLines.push(`param workbookEnabled = true`);
+            }
+          }
+          ciSnippet = ciLines.join('\n');
+        } else {
+          const ciLines = [
+            `# Update in ${ciFileName}`,
+            `scenario    = "${scenario}"`,
+            `location    = "${state.answers.location}"`,
+            `name_prefix = "${state.answers.name_prefix}"`,
+          ];
+          if (state.answers.advanced_mode === 'yes') {
+            if (state.answers.log_retention_days && state.answers.log_retention_days !== '30') {
+              ciLines.push(`log_retention_days = ${state.answers.log_retention_days}`);
+            }
+            if (state.answers.budget_amount) {
+              const emails = (state.answers.budget_alert_emails || '').split(',').map(s => s.trim()).filter(Boolean);
+              ciLines.push('');
+              ciLines.push('budget_enabled      = true');
+              ciLines.push(`budget_amount       = ${state.answers.budget_amount}`);
+              ciLines.push(`budget_alert_emails = [${emails.map(e => `"${e}"`).join(', ')}]`);
+            }
+            if (state.answers.workbook_enabled === 'yes') {
+              ciLines.push('');
+              ciLines.push('workbook_enabled = true');
+            }
+          }
+          ciSnippet = ciLines.join('\n');
+        }
         const ciPre = el('pre', {}, el('code', {}, ciSnippet));
         ciPre.appendChild(copyButton(ciSnippet));
         checklist.appendChild(ciPre);
@@ -1414,8 +1471,14 @@ function render(root) {
             ' (the client ID of the MG service principal).',
           ));
           checklist.appendChild(el('li', {},
-            'Update ', el('code', {}, mgCiFile), ' with your MG configuration.',
+            'Update ', el('code', {}, mgCiFile), ' with your MG configuration:',
           ));
+          const mgCiContent = isBicep
+            ? buildMgBicepParams(state.answers)
+            : buildMgTfvars(state.answers);
+          const mgCiPre = el('pre', {}, el('code', {}, mgCiContent));
+          mgCiPre.appendChild(copyButton(mgCiContent));
+          checklist.appendChild(mgCiPre);
           checklist.appendChild(el('li', {},
             'Push and trigger ', el('code', {}, mgWorkflow),
             ' via workflow_dispatch, selecting scenario ', el('code', {}, 'minimal'), '.',
