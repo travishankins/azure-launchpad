@@ -10,11 +10,11 @@ This repo ships **8 GitHub Actions workflows** under `.github/workflows/` — a 
 | `terraform-plan.yml`     | PR to `main` touching `infra/terraform/foundation/**`        | `fmt -check`, `validate`, `tfsec`, matrix-`plan` over all 4 scenarios, uploads each plan as an artifact. |
 | `terraform-apply.yml`    | Manual `workflow_dispatch` (pick scenario)                   | `init`, select workspace, `apply -auto-approve`. Gated by the `prod` environment.                        |
 | `bicep-plan.yml`         | PR to `main` touching `infra/bicep/foundation/**`            | `bicep build`, `az deployment sub what-if` for the chosen scenario, posts results as a PR comment.       |
-| `bicep-apply.yml`        | Manual `workflow_dispatch` or push to `main`                 | `az deployment sub create` for the chosen scenario. Gated by the `apply` environment.                    |
+| `bicep-apply.yml`        | Manual `workflow_dispatch`                                   | `az deployment sub create` for the chosen scenario. Gated by the `apply` environment.                    |
 | `terraform-mg-plan.yml`  | PR to `main` touching `infra/terraform/management-groups/**` | `validate` + `plan` for the MG hierarchy at tenant scope.                                                |
-| `terraform-mg-apply.yml` | Manual `workflow_dispatch`                                   | `apply` for the MG hierarchy. Gated by the `prod-tenant` environment.                                    |
+| `terraform-mg-apply.yml` | Manual `workflow_dispatch`                                   | `apply` for the MG hierarchy. Gated by the `apply-mg` environment.                                      |
 | `bicep-mg-plan.yml`      | PR to `main` touching `infra/bicep/management-groups/**`     | `bicep build` + `az deployment tenant what-if`.                                                          |
-| `bicep-mg-apply.yml`     | Manual `workflow_dispatch`                                   | `az deployment tenant create`. Gated by the `prod-tenant` environment.                                   |
+| `bicep-mg-apply.yml`     | Manual `workflow_dispatch`                                   | `az deployment tenant create`. Gated by the `apply-mg` environment.                                     |
 
 ---
 
