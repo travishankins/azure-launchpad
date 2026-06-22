@@ -728,7 +728,10 @@ Deploy method: ${isActions ? 'GitHub Actions (OIDC)' : 'Local / Cloud Shell'}
       : `infra/terraform/foundation/scenarios/${scenario}.tfvars`;
     const workflowName = isBicep ? 'bicep-apply' : 'terraform-apply';
     const tfVarsStep = !isBicep ? `\n- Set additional variables: \`TFSTATE_RG\`, \`TFSTATE_SA\`, \`TFSTATE_CONTAINER\`.` : '';
-    const mgStep = hasMg ? `\n- Create a second app registration with MG Contributor at Tenant Root. Set \`AZURE_MG_CLIENT_ID\`.\n- Add federated credentials for \`plan-mg\` and \`apply-mg\` environments.` : '';
+    const mgPermissions = ['Management Group Contributor'];
+    if (!isBicep) mgPermissions.push('Storage Blob Data Contributor (on state storage account)');
+    if (answers.mg_policies === 'starter') mgPermissions.push('Resource Policy Contributor');
+    const mgStep = hasMg ? `\n- Create a second app registration and grant ${mgPermissions.join(', ')} at Tenant Root. Set \`AZURE_MG_CLIENT_ID\`.\n- Add federated credentials for \`plan-mg\` and \`apply-mg\` environments.\n- Create GitHub environments: \`plan-mg\` (unprotected) and \`apply-mg\` (Required Reviewers enabled).` : '';
     let result = header + `## GitHub Actions Setup
 
 - Create an Entra app registration and grant Contributor on target subscription(s).
@@ -743,11 +746,12 @@ Full guide: https://azurelaunchpad.com/reference/cicd/
 
     // Add bootstrap section for Terraform
     if (!isBicep) {
+      const bootstrapSub = isMulti ? answers.management_subscription_id : answers.subscription_id;
       result += `
 ## Bootstrap state backend (run once locally)
 
 \`\`\`bash
-ARM_SUBSCRIPTION_ID=<target-sub> \\
+ARM_SUBSCRIPTION_ID=${bootstrapSub} \\
 PREFIX=${answers.name_prefix} \\
 LOCATION=${answers.location} \\
 REGION_SHORT=${shortRegion(answers.location)} \\
@@ -1424,8 +1428,7 @@ function render(root) {
         checklist.appendChild(el('li', {},
           'Add federated credentials for the ',
           el('code', {}, planEnv), ' and ',
-          el('code', {}, protectedEnv), ' environments',
-          hasMg ? ' (and ' : '', hasMg ? el('code', {}, 'apply-mg') : '', hasMg ? ' for MGs).' : '.',
+          el('code', {}, protectedEnv), ' environments.',
         ));
         checklist.appendChild(el('li', {},
           'Create GitHub environments: ',
@@ -1436,7 +1439,7 @@ function render(root) {
         if (!isBicep) {
           checklist.appendChild(el('li', {},
             'Bootstrap the Terraform state backend (run once locally): ',
-            el('code', {}, `ARM_SUBSCRIPTION_ID=<sub> PREFIX=${state.answers.name_prefix} LOCATION=${state.answers.location} REGION_SHORT=${shortRegion(state.answers.location)} ./scripts/bootstrap-state.sh`),
+            el('code', {}, `ARM_SUBSCRIPTION_ID=${isMulti ? state.answers.management_subscription_id : state.answers.subscription_id} PREFIX=${state.answers.name_prefix} LOCATION=${state.answers.location} REGION_SHORT=${shortRegion(state.answers.location)} ./scripts/bootstrap-state.sh`),
           ));
           checklist.appendChild(el('li', {},
             'Grant the OIDC service principal ',
