@@ -1,4 +1,4 @@
-// Azure Launchpad (SMB / SMEC Edition) — interactive configuration generator.
+// Azure Launchpad — interactive configuration generator.
 // Plain ES module, no framework, served from /public.
 
 const QUESTIONS = [
@@ -38,6 +38,23 @@ const QUESTIONS = [
     ],
   },
   {
+    id: 'deploy_method',
+    label: 'How will you deploy?',
+    help: 'Local / Cloud Shell runs commands directly from your terminal. GitHub Actions uses OIDC for automated, approval-gated deployments.',
+    impact: {
+      bullets: [
+        ['Local / Cloud Shell: ', 'You run preflight, preview, and apply commands interactively. Best for first-time evaluation or single-operator teams.'],
+        ['GitHub Actions: ', 'Generates an environment setup checklist: OIDC federated credentials, repo variables, environment protection rules, and approval gates.'],
+      ],
+    },
+    type: 'radio',
+    options: [
+      { value: 'local', label: 'Local / Cloud Shell — run commands interactively.' },
+      { value: 'actions', label: 'GitHub Actions — automated CI/CD with OIDC and approval gates.' },
+    ],
+  },
+
+  {
     id: 'deployment_mode',
     label: 'Single subscription or ALZ-aligned multi-subscription split?',
     help: 'Single = everything (hub, spoke, monitoring, KV) lands in one subscription. Multi = ALZ-aligned split across three subscriptions: Connectivity (hub VNet, firewall, VPN), Management (Log Analytics, RSV, automation), Landing-Zone (spoke VNet, KV, workloads). Multi requires Contributor on each sub.',
@@ -73,7 +90,7 @@ const QUESTIONS = [
   {
     id: 'subscription_id',
     label: 'Target Azure subscription ID (single-sub mode)',
-    help: 'Single subscription that hosts everything. The OIDC service principal used by CI must have Contributor here. Find with: az account show --query id -o tsv',
+    help: 'Single subscription that hosts everything. The signed-in identity must have Contributor here. Find with: az account show --query id -o tsv',
     impact: 'Used as the home subscription for the azurerm provider. All 6 resource groups (rg-hub, rg-monitor, rg-backup, rg-spoke-prod, rg-security, rg-migrate) land here.',
     type: 'text',
     placeholder: '00000000-0000-0000-0000-000000000000',
@@ -629,6 +646,205 @@ az deployment tenant create \\
 `;
 }
 
+
+
+function buildDeploymentReadme(answers) {
+  const scenario = deriveScenario(answers);
+  const isBicep = answers.iac_platform === 'bicep';
+  const isMulti = resolveDeploymentMode(answers) === 'multi';
+  const hasMg = resolveMgEnable(answers) === 'yes';
+  const paramFileName = isBicep ? 'wizard.bicepparam' : 'wizard.auto.tfvars';
+  const paramFolder = isBicep
+    ? 'infra/bicep/foundation/scenarios'
+    : 'infra/terraform/foundation/scenarios';
+  const previewCmds = buildPreviewCommands(answers);
+  const applyCmds = buildApplyCommands(answers);
+  const verifyCmds = buildVerifyCommands(answers);
+
+  let mgSection = '';
+  if (hasMg) {
+    const mgPreview = buildMgPreviewCommands(answers);
+    const mgApply = buildMgApplyCommands(answers);
+    mgSection = `
+## Management Groups (separate, tenant-scoped deployment)
+
+### MG Preview
+\`\`\`bash
+${mgPreview}
+\`\`\`
+
+### MG Apply
+\`\`\`bash
+${mgApply}
+\`\`\`
+`;
+  }
+
+  return `# Azure Launchpad — Deployment Kit
+
+Generated: ${new Date().toISOString().slice(0, 10)}
+Scenario: **${scenario}**
+IaC: ${isBicep ? 'Bicep' : 'Terraform'}
+Mode: ${isMulti ? 'Multi-subscription (ALZ split)' : 'Single subscription'}
+Region: ${answers.location}
+Name prefix: ${answers.name_prefix}
+
+## Quick start
+
+1. Copy \`${paramFileName}\` to \`${paramFolder}/\` in the repo.
+2. Run preflight, preview, then apply:
+
+### Preflight
+\`\`\`bash
+./scripts/preflight.sh --iac ${isBicep ? 'bicep' : 'terraform'} --mode ${isMulti ? 'multi' : 'single'}
+\`\`\`
+
+### Preview (dry-run, no resources created)
+\`\`\`bash
+${previewCmds}
+\`\`\`
+
+### Apply (creates Azure resources)
+\`\`\`bash
+${applyCmds}
+\`\`\`
+
+### Verify
+\`\`\`bash
+${verifyCmds}
+\`\`\`
+${mgSection}
+## Notes
+
+- The parameter file contains subscription/tenant IDs. Keep it out of public repos.
+- Pricing: see https://azure.microsoft.com/en-us/pricing/calculator/
+- Day-2 operations: see https://azurelaunchpad.com/reference/day-2-operations/
+`;
+}
+
+function buildPreviewCommands(answers) {
+  const scenario = deriveScenario(answers);
+  const isBicep = answers.iac_platform === 'bicep';
+  const isMulti = resolveDeploymentMode(answers) === 'multi';
+
+  if (isBicep) {
+    if (isMulti) {
+      return `# Preview all layers (no resources created)
+./scripts/deploy.sh plan --iac bicep --mode multi \
+  --connectivity-sub ${answers.connectivity_subscription_id} \
+  --management-sub   ${answers.management_subscription_id} \
+  --landingzone-sub  ${answers.landingzone_subscription_id} \
+  --scenario ${scenario} --name-prefix ${answers.name_prefix} \
+  --region ${answers.location} --region-short ${shortRegion(answers.location)}`;
+    }
+    return `# Preview the deployment (what-if)
+./scripts/deploy.sh plan --iac bicep --mode single \
+  --subscription ${answers.subscription_id} --scenario ${scenario} \
+  --config infra/bicep/foundation/scenarios/wizard.bicepparam \
+  --region ${answers.location}`;
+  }
+
+  // Terraform
+  const modeArgs = isMulti
+    ? `--mode multi \
+  --connectivity-sub ${answers.connectivity_subscription_id} \
+  --management-sub ${answers.management_subscription_id} \
+  --landingzone-sub ${answers.landingzone_subscription_id}`
+    : `--mode single --subscription ${answers.subscription_id}`;
+  return `# Save a reviewable plan (no resources created)
+./scripts/deploy.sh plan --iac terraform ${modeArgs} \
+  --scenario ${scenario} \
+  --config infra/terraform/foundation/scenarios/wizard.auto.tfvars`;
+}
+
+function buildApplyCommands(answers) {
+  const scenario = deriveScenario(answers);
+  const isBicep = answers.iac_platform === 'bicep';
+  const isMulti = resolveDeploymentMode(answers) === 'multi';
+
+  if (isBicep) {
+    if (isMulti) {
+      return `# Deploy all layers in dependency order
+./scripts/deploy.sh apply --iac bicep --mode multi \
+  --connectivity-sub ${answers.connectivity_subscription_id} \
+  --management-sub   ${answers.management_subscription_id} \
+  --landingzone-sub  ${answers.landingzone_subscription_id} \
+  --scenario ${scenario} --name-prefix ${answers.name_prefix} \
+  --region ${answers.location} --region-short ${shortRegion(answers.location)}`;
+    }
+    return `# Deploy (creates Azure resources)
+./scripts/deploy.sh apply --iac bicep --mode single \
+  --subscription ${answers.subscription_id} --scenario ${scenario} \
+  --config infra/bicep/foundation/scenarios/wizard.bicepparam \
+  --region ${answers.location}`;
+  }
+
+  // Terraform
+  const modeArgs = isMulti
+    ? `--mode multi \
+  --connectivity-sub ${answers.connectivity_subscription_id} \
+  --management-sub ${answers.management_subscription_id} \
+  --landingzone-sub ${answers.landingzone_subscription_id}`
+    : `--mode single --subscription ${answers.subscription_id}`;
+  const planFile = `.launchpad/plans/foundation.${scenario}.${isMulti ? 'multi' : 'single'}.tfplan`;
+  return `# Apply only the saved, reviewed plan
+./scripts/deploy.sh apply --iac terraform ${modeArgs} \
+  --scenario ${scenario} \
+  --config infra/terraform/foundation/scenarios/wizard.auto.tfvars \
+  --plan-file ${planFile}`;
+}
+
+function buildVerifyCommands(answers) {
+  const scenario = deriveScenario(answers);
+  const isMulti = resolveDeploymentMode(answers) === 'multi';
+  const modeArgs = isMulti
+    ? `--mode multi \
+  --connectivity-sub ${answers.connectivity_subscription_id} \
+  --management-sub ${answers.management_subscription_id} \
+  --landingzone-sub ${answers.landingzone_subscription_id}`
+    : `--mode single --subscription ${answers.subscription_id}`;
+  return `# Verify expected resources exist
+./scripts/verify.sh ${modeArgs} \
+  --scenario ${scenario} --name-prefix ${answers.name_prefix} \
+  --region-short ${shortRegion(answers.location)}`;
+}
+
+function buildMgPreviewCommands(answers) {
+  const isBicep = answers.iac_platform === 'bicep';
+  if (isBicep) {
+    return `# Preview MG changes (tenant-scoped what-if)
+az login --tenant ${answers.tenant_id}
+
+az deployment tenant what-if \
+  --location ${answers.location} \
+  --name foundations-mg-wizard \
+  --parameters infra/bicep/management-groups/scenarios/wizard.bicepparam`;
+  }
+  return `# Preview MG changes (terraform plan)
+cd infra/terraform/management-groups
+
+terraform init \
+  -backend-config="resource_group_name=rg-tfstate-${answers.name_prefix}-${shortRegion(answers.location)}" \
+  -backend-config="storage_account_name=<from-bootstrap>" \
+  -backend-config="container_name=tfstate" \
+  -backend-config="key=management-groups.wizard.tfstate"
+
+terraform plan -var-file=mg.auto.tfvars -out=mg.tfplan`;
+}
+
+function buildMgApplyCommands(answers) {
+  const isBicep = answers.iac_platform === 'bicep';
+  if (isBicep) {
+    return `# Apply MG deployment (creates hierarchy at tenant root)
+az deployment tenant create \
+  --location ${answers.location} \
+  --name foundations-mg-wizard \
+  --parameters infra/bicep/management-groups/scenarios/wizard.bicepparam`;
+  }
+  return `# Apply the reviewed MG plan
+terraform apply mg.tfplan`;
+}
+
 function shortRegion(loc) {
   const map = {
     westcentralus: 'wcus', westus2: 'wus2', westus3: 'wus3',
@@ -671,10 +887,22 @@ function copyButton(text) {
 }
 
 function render(root) {
-  const state = { step: 0, answers: createInitialAnswers() };
+  // Restore progress from sessionStorage (survives accidental refresh)
+  const saved = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('launchpad-wizard');
+  const restored = saved ? JSON.parse(saved) : null;
+  const state = restored
+    ? { step: restored.step || 0, answers: { ...createInitialAnswers(), ...restored.answers } }
+    : { step: 0, answers: createInitialAnswers() };
+
+  function saveProgress() {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('launchpad-wizard', JSON.stringify({ step: state.step, answers: state.answers }));
+    }
+  }
 
   function draw() {
     root.innerHTML = '';
+    root.setAttribute('aria-live', 'polite');
 
     if (state.step >= QUESTIONS.length) {
       drawResult();
@@ -697,13 +925,21 @@ function render(root) {
 
     const total = visibleStepCount(state.answers);
     const visibleIdx = QUESTIONS.slice(0, state.step + 1).filter((qq) => !isStepSkipped(qq.id, state.answers)).length;
-    root.appendChild(
-      el('div', { class: 'step-indicator' }, el('strong', {}, `Step ${visibleIdx} of ${total}`)),
-    );
-    root.appendChild(el('label', { for: q.id }, q.label));
+    const progressPct = Math.round((visibleIdx / total) * 100);
+    root.appendChild(el('div', {
+      class: 'wizard-progress', role: 'progressbar',
+      'aria-valuenow': progressPct, 'aria-valuemin': 0, 'aria-valuemax': 100,
+      'aria-label': `Step ${visibleIdx} of ${total}`,
+    }, el('div', { class: 'wizard-progress-fill', style: `width:${progressPct}%` })));
+    root.appendChild(el('p', { class: 'wizard-step-count' }, `Step ${visibleIdx} of ${total}`));
+
+    // Fieldset + legend for accessibility (groups related inputs with a label)
+    const fieldset = el('fieldset', { class: 'wizard-fieldset' });
+    fieldset.appendChild(el('legend', {}, q.label));
+    root.appendChild(fieldset);
 
     if (q.help) {
-      root.appendChild(el('p', { class: 'wizard-help' }, q.help));
+      fieldset.appendChild(el('p', { class: 'wizard-help' }, q.help));
     }
     if (q.impact) {
       const impactBox = el('div', { class: 'wizard-impact' },
@@ -723,7 +959,7 @@ function render(root) {
           impactBox.appendChild(el('p', { class: 'wizard-impact-note' }, q.impact.note));
         }
       }
-      root.appendChild(impactBox);
+      fieldset.appendChild(impactBox);
     }
 
     let input;
@@ -738,7 +974,7 @@ function render(root) {
         card.appendChild(el('span', {}, opt.label));
         wrap.appendChild(card);
       });
-      root.appendChild(wrap);
+      fieldset.appendChild(wrap);
       input = wrap;
     } else if (q.type === 'checkbox') {
       const current = new Set(state.answers[q.id] || q.options.filter((o) => o.default).map((o) => o.value));
@@ -753,7 +989,7 @@ function render(root) {
         card.appendChild(el('span', {}, opt.label));
         wrap.appendChild(card);
       });
-      root.appendChild(wrap);
+      fieldset.appendChild(wrap);
       input = wrap;
     } else if (q.type === 'select') {
       const sel = el('select', { id: q.id, name: q.id });
@@ -762,7 +998,7 @@ function render(root) {
         if ((state.answers[q.id] || q.default) === opt.value) o.selected = true;
         sel.appendChild(o);
       });
-      root.appendChild(sel);
+      fieldset.appendChild(sel);
       input = sel;
     } else {
       input = el('input', {
@@ -776,17 +1012,17 @@ function render(root) {
         autocapitalize: 'off',
         spellcheck: 'false',
       });
-      root.appendChild(input);
+      fieldset.appendChild(input);
     }
 
     const errBox = el('div', { class: 'verdict hidden', id: 'wizard-error' });
-    root.appendChild(errBox);
+    fieldset.appendChild(errBox);
 
     const actions = el('div', { class: 'actions' });
     if (state.step > 0) {
       actions.appendChild(el('button', {
         type: 'button', class: 'secondary',
-        onclick: () => { state._direction = -1; state.step -= 1; draw(); },
+        onclick: () => { state._direction = -1; state.step -= 1; saveProgress(); draw(); },
       }, 'Back'));
     }
     const isLast = state.step === QUESTIONS.length - 1
@@ -827,6 +1063,7 @@ function render(root) {
         state.answers[q.id] = value;
         state._direction = 1;
         state.step += 1;
+        saveProgress();
         draw();
       },
     }, isLast ? 'Generate' : 'Next'));
@@ -837,135 +1074,223 @@ function render(root) {
     const scenario = deriveScenario(state.answers);
     const meta = SCENARIO_META[scenario];
     const isBicep = state.answers.iac_platform === 'bicep';
+    const isActions = state.answers.deploy_method === 'actions';
     const platformLabel = isBicep ? 'Bicep' : 'Terraform';
     const paramFileName = isBicep ? 'wizard.bicepparam' : 'wizard.auto.tfvars';
     const paramFolder = isBicep
       ? 'infra/bicep/foundation/scenarios'
       : 'infra/terraform/foundation/scenarios';
     const paramFile = isBicep ? buildBicepParams(state.answers) : buildTfvars(state.answers);
-    const cmds = isBicep ? buildBicepCommands(state.answers) : buildCommands(state.answers);
     const hasMg = resolveMgEnable(state.answers) === 'yes';
 
-    root.appendChild(el('h2', {}, 'Your deployment plan'));
-    root.appendChild(el('p', { class: 'wizard-help' },
-      `Based on your answers, the recommended scenario is `,
-      el('strong', {}, scenario),
-      ` (${meta.price}), deployed with `,
-      el('strong', {}, platformLabel),
-      `. Follow the steps below: save the generated configuration, preview the changes with a dry-run, review, then apply.`,
-    ));
-
-    const steps = [
-      `Save the generated ${platformLabel} parameter file into the repo at ${paramFolder}/${paramFileName}.`,
-      `Run the shared preflight and preview command, review the result, then approve the apply and verification commands.`,
+    // --- Review Summary ---
+    root.appendChild(el('h2', {}, 'Review your configuration'));
+    const reviewTable = el('table', { class: 'wizard-review-table' });
+    const reviewRows = [
+      ['Scenario', `${scenario} (${meta.price})`],
+      ['IaC', platformLabel],
+      ['Deploy method', isActions ? 'GitHub Actions (OIDC)' : 'Local / Cloud Shell'],
+      ['Subscription mode', resolveDeploymentMode(state.answers) === 'multi' ? 'Multi-subscription (ALZ split)' : 'Single subscription'],
+      ['Region', state.answers.location],
+      ['Name prefix', state.answers.name_prefix],
+      ['Management Groups', hasMg ? 'Yes (tenant-scoped)' : 'No'],
     ];
-    if (hasMg) {
-      const mgFolder = isBicep ? 'infra/bicep/management-groups/scenarios' : 'infra/terraform/management-groups';
-      const mgFile = isBicep ? 'wizard.bicepparam' : 'mg.auto.tfvars';
-      steps.push(`Save the Management Groups ${platformLabel} parameter file at ${mgFolder}/${mgFile}.`);
-      steps.push(`Deploy the MG hierarchy at tenant scope (separate state / deployment).`);
+    if (state.answers.budget_amount) {
+      reviewRows.push(['Budget', `$${state.answers.budget_amount} USD/mo`]);
     }
-    const ol = el('ol', { class: 'wizard-steps' });
-    steps.forEach((s) => ol.appendChild(el('li', {}, s)));
-    root.appendChild(ol);
+    reviewRows.push(['Required role', hasMg ? 'Contributor + MG Contributor at Tenant Root' : 'Contributor on target subscription(s)']);
+    const tbody = el('tbody');
+    reviewRows.forEach(([label, value]) => {
+      tbody.appendChild(el('tr', {},
+        el('td', { class: 'review-label' }, el('strong', {}, label)),
+        el('td', {}, value),
+      ));
+    });
+    reviewTable.appendChild(tbody);
+    root.appendChild(reviewTable);
 
+    const editBtn = el('button', {
+      type: 'button', class: 'secondary',
+      onclick: () => { state.step = 0; state._direction = 1; draw(); },
+    }, 'Edit answers');
+    root.appendChild(el('div', { class: 'actions' }, editBtn));
+
+    // --- Cost context ---
     root.appendChild(el('div', { class: 'wizard-impact' },
-      el('strong', {}, 'Before you start: '),
-      isBicep
-        ? 'sign in with a principal that has Contributor on the subscription'
-        : 'make sure you have run ',
-      isBicep ? null : el('code', {}, './scripts/bootstrap-state.sh'),
-      isBicep ? null : ' once for this subscription (creates the Azure Storage backend for Terraform state) and that the principal you authenticate as has Contributor on the subscription',
-      hasMg ? ' AND Management Group Contributor at Tenant Root.' : '.',
+      el('strong', {}, `Estimated cost: ${meta.price} `),
+      '(USD, West Central US pricing, June 2026). ',
+      'Excludes data transfer, log ingestion beyond free tier, backup storage, and VPN tunnel throughput. ',
+      el('a', { href: 'https://azure.microsoft.com/en-us/pricing/calculator/' }, 'Azure Pricing Calculator'),
+      ' for exact figures.',
     ));
 
-    root.appendChild(el('h3', {}, `Scenario summary: ${scenario}`));
-    root.appendChild(el('div', { class: 'verdict' },
-      el('strong', {}, `${meta.price}. `),
-      meta.summary,
+    // --- Deployment Checklist ---
+    root.appendChild(el('h2', {}, 'Deployment checklist'));
+    root.appendChild(el('p', { class: 'wizard-help' },
+      'Complete each stage in order. Expand a stage to see the files and commands.',
     ));
 
-    root.appendChild(el('div', { class: 'wizard-impact wizard-secret-warning' },
-      el('strong', {}, 'Keep this file out of public repos. '),
-      `The generated ${paramFileName} contains your subscription ID and tenant ID. They aren't secrets on their own (no access without an Entra identity + RBAC), but they're useful for phishing and reconnaissance — treat them as internal. `,
-      `The repo's .gitignore already excludes wizard-generated files (`,
-      el('code', {}, 'wizard*.bicepparam'),
-      ' / ',
-      el('code', {}, 'wizard*.auto.tfvars'),
-      '), so they won\'t be committed accidentally.',
-    ));
-
-    root.appendChild(el('h3', {}, `1. Save as ${paramFolder}/${paramFileName}`));
-    const paramPre = el('pre', {}, el('code', {}, paramFile));
-    paramPre.appendChild(copyButton(paramFile));
-    root.appendChild(paramPre);
-
-    const dl = el('a', {
-      href: URL.createObjectURL(new Blob([paramFile], { type: 'text/plain' })),
-      download: paramFileName,
-    }, `Download ${platformLabel} parameter file`);
-    root.appendChild(dl);
-
-    root.appendChild(el('h3', {}, '2. Run these commands'));
-    const cmdsPre = el('pre', {}, el('code', {}, cmds));
-    cmdsPre.appendChild(copyButton(cmds));
-    root.appendChild(cmdsPre);
-
-    if (resolveMgEnable(state.answers) === 'yes') {
-      const mgIsBicep = isBicep;
-      const mgFile = mgIsBicep ? buildMgBicepParams(state.answers) : buildMgTfvars(state.answers);
-      const mgCmds = mgIsBicep ? buildMgBicepCommands(state.answers) : buildMgCommands(state.answers);
-      const mgFileName = mgIsBicep ? 'wizard.bicepparam' : 'mg.auto.tfvars';
-      const mgFolder = mgIsBicep
-        ? 'infra/bicep/management-groups/scenarios'
-        : 'infra/terraform/management-groups';
-
-      root.appendChild(el('h2', {}, `Plus: Management Groups (separate, tenant-scoped ${platformLabel} deploy)`));
-      root.appendChild(el('div', { class: 'verdict' },
-        el('strong', {}, 'Heads up — '),
-        'this runs at tenant root, not in your subscription. The principal needs ',
-        el('code', {}, 'Management Group Contributor'),
-        ' on the Tenant Root Group.',
-      ));
-
-      root.appendChild(el('h3', {}, `A. Save as ${mgFolder}/${mgFileName}`));
-      const mgFilePre = el('pre', {}, el('code', {}, mgFile));
-      mgFilePre.appendChild(copyButton(mgFile));
-      root.appendChild(mgFilePre);
-
-      const mgDl = el('a', {
-        href: URL.createObjectURL(new Blob([mgFile], { type: 'text/plain' })),
-        download: mgFileName,
-      }, `Download MG ${platformLabel} parameter file`);
-      root.appendChild(mgDl);
-
-      root.appendChild(el('h3', {}, 'B. Deploy the Management Groups'));
-      const mgCmdsPre = el('pre', {}, el('code', {}, mgCmds));
-      mgCmdsPre.appendChild(copyButton(mgCmds));
-      root.appendChild(mgCmdsPre);
-
-      root.appendChild(el('p', {},
-        'See ',
-        el('a', { href: '/governance/management-groups/' }, 'Management Groups'),
-        ' and the ',
-        el('a', { href: '/governance/policy-catalog/' }, 'Policy catalog'),
-        ' for details.',
-      ));
+    // Helper for expandable stages
+    function stage(number, title, dangerClass, contentFn) {
+      const details = el('details', { class: `wizard-stage ${dangerClass || ''}` });
+      const summary = el('summary', {},
+        el('span', { class: 'stage-number' }, `${number}`),
+        el('span', { class: 'stage-title' }, title),
+      );
+      details.appendChild(summary);
+      const body = el('div', { class: 'stage-body' });
+      contentFn(body);
+      details.appendChild(body);
+      return details;
     }
 
-    root.appendChild(el('h3', {}, 'Next steps'));
+    // Stage 1: Save configuration
+    root.appendChild(stage(1, `Save ${platformLabel} parameter file`, '', (body) => {
+      body.appendChild(el('p', {},
+        `Save as `, el('code', {}, `${paramFolder}/${paramFileName}`), '.',
+      ));
+      body.appendChild(el('div', { class: 'wizard-impact wizard-secret-warning' },
+        el('strong', {}, 'Keep out of public repos. '),
+        `Contains subscription/tenant IDs. The repo\u2019s .gitignore already excludes wizard-generated files.`,
+      ));
+      const pre = el('pre', {}, el('code', {}, paramFile));
+      pre.appendChild(copyButton(paramFile));
+      body.appendChild(pre);
+      body.appendChild(el('a', {
+        href: URL.createObjectURL(new Blob([paramFile], { type: 'text/plain' })),
+        download: paramFileName,
+        class: 'wizard-download',
+      }, `Download ${paramFileName}`));
+      const readme = buildDeploymentReadme(state.answers);
+      body.appendChild(el('a', {
+        href: URL.createObjectURL(new Blob([readme], { type: 'text/markdown' })),
+        download: 'DEPLOY.md',
+        class: 'wizard-download',
+      }, 'Download deployment kit (DEPLOY.md)'));
+    }));
+
+    if (isActions) {
+      // Stage 2 for Actions: environment setup checklist
+      root.appendChild(stage(2, 'Configure GitHub Actions (OIDC)', '', (body) => {
+        body.appendChild(el('p', {}, 'Set up your repository for automated deployment with OIDC:'));
+        const checklist = el('ol', { class: 'wizard-steps' });
+        checklist.appendChild(el('li', {}, 'Create an Entra app registration and grant Contributor on target subscription(s).'));
+        checklist.appendChild(el('li', {}, 'Add federated credentials for the ', el('code', {}, 'apply'), ' environment (and ', el('code', {}, 'apply-mg'), ' if using MGs).'));
+        checklist.appendChild(el('li', {}, 'Create GitHub environments (', el('code', {}, 'apply'), ') with Required Reviewers enabled.'));
+        checklist.appendChild(el('li', {}, 'Set repository variables: ', el('code', {}, 'AZURE_CLIENT_ID'), ', ', el('code', {}, 'AZURE_TENANT_ID'), ', ', el('code', {}, 'AZURE_SUBSCRIPTION_ID'), '.'));
+        checklist.appendChild(el('li', {}, 'Push the parameter file and trigger ', el('code', {}, 'workflow_dispatch'), ' from the Actions tab.'));
+        body.appendChild(checklist);
+        body.appendChild(el('p', {},
+          'Full guide: ', el('a', { href: '/reference/cicd/' }, 'CI/CD pipeline reference'), '.',
+        ));
+      }));
+    } else {
+      // Stage 2 for Local: Preflight
+      const preflightCmd = isBicep
+        ? `./scripts/preflight.sh --iac bicep --mode ${resolveDeploymentMode(state.answers) === 'multi' ? 'multi' : 'single'}`
+        : `./scripts/preflight.sh --iac terraform --mode ${resolveDeploymentMode(state.answers) === 'multi' ? 'multi' : 'single'}`;
+      root.appendChild(stage(2, 'Preflight checks', '', (body) => {
+        body.appendChild(el('p', {}, 'Validates tooling, Azure auth, and subscription access before you plan anything.'));
+        const pre = el('pre', {}, el('code', {}, preflightCmd));
+        pre.appendChild(copyButton(preflightCmd));
+        body.appendChild(pre);
+      }));
+
+      // Stage 3: Preview
+      const previewCmds = buildPreviewCommands(state.answers);
+      root.appendChild(stage(3, 'Preview changes (dry-run)', '', (body) => {
+        body.appendChild(el('p', {}, isBicep
+          ? 'Runs what-if to show exactly what Azure resources will be created, modified, or deleted.'
+          : 'Saves a Terraform plan file for review. No resources are created yet.',
+        ));
+        const pre = el('pre', {}, el('code', {}, previewCmds));
+        pre.appendChild(copyButton(previewCmds));
+        body.appendChild(pre);
+      }));
+
+      // Stage 4: Apply
+      const applyCmds = buildApplyCommands(state.answers);
+      root.appendChild(stage(4, 'Apply reviewed plan', 'wizard-stage-caution', (body) => {
+        body.appendChild(el('p', {},
+          el('strong', {}, 'Creates real Azure resources. '),
+          'Review the preview output above before running this.',
+        ));
+        const pre = el('pre', {}, el('code', {}, applyCmds));
+        pre.appendChild(copyButton(applyCmds));
+        body.appendChild(pre);
+      }));
+
+      // Stage 5: Verify
+      const verifyCmds = buildVerifyCommands(state.answers);
+      root.appendChild(stage(5, 'Verify deployment', '', (body) => {
+        body.appendChild(el('p', {}, 'Confirms expected resource groups and scenario-specific resources exist.'));
+        const pre = el('pre', {}, el('code', {}, verifyCmds));
+        pre.appendChild(copyButton(verifyCmds));
+        body.appendChild(pre);
+      }));
+    }
+
+    // MG Stage (separate, visually distinct)
+    if (hasMg) {
+      const mgFile = isBicep ? buildMgBicepParams(state.answers) : buildMgTfvars(state.answers);
+      const mgFileName = isBicep ? 'wizard.bicepparam' : 'mg.auto.tfvars';
+      const mgFolder = isBicep ? 'infra/bicep/management-groups/scenarios' : 'infra/terraform/management-groups';
+      const mgPreviewCmds = buildMgPreviewCommands(state.answers);
+      const mgApplyCmds = buildMgApplyCommands(state.answers);
+
+      root.appendChild(el('h2', {}, 'Management Groups (tenant-scoped, separate deploy)'));
+      root.appendChild(el('div', { class: 'verdict' },
+        el('strong', {}, 'Runs at tenant root. '),
+        'The principal needs ', el('code', {}, 'Management Group Contributor'),
+        ' on the Tenant Root Group. This is a separate deployment from the foundation above.',
+      ));
+
+      root.appendChild(stage('A', `Save MG ${platformLabel} parameter file`, '', (body) => {
+        const pre = el('pre', {}, el('code', {}, mgFile));
+        pre.appendChild(copyButton(mgFile));
+        body.appendChild(pre);
+        body.appendChild(el('a', {
+          href: URL.createObjectURL(new Blob([mgFile], { type: 'text/plain' })),
+          download: mgFileName,
+        }, `Download ${mgFileName}`));
+      }));
+
+      root.appendChild(stage('B', 'Preview Management Groups', '', (body) => {
+        body.appendChild(el('p', {}, 'Dry-run the tenant-scoped MG deployment.'));
+        const pre = el('pre', {}, el('code', {}, mgPreviewCmds));
+        pre.appendChild(copyButton(mgPreviewCmds));
+        body.appendChild(pre);
+      }));
+
+      root.appendChild(stage('C', 'Apply Management Groups', 'wizard-stage-caution', (body) => {
+        body.appendChild(el('p', {},
+          el('strong', {}, 'Creates MG hierarchy at tenant root. '),
+          'Review the preview output first.',
+        ));
+        const pre = el('pre', {}, el('code', {}, mgApplyCmds));
+        pre.appendChild(copyButton(mgApplyCmds));
+        body.appendChild(pre);
+      }));
+    }
+
+    // Next steps
+    root.appendChild(el('h3', {}, 'After deployment'));
     const ul = el('ul');
     const nextSteps = [
-      ['Read the full prerequisites checklist', '/getting-started/prerequisites/'],
+      ['Wire diagnostic settings to Log Analytics', '/reference/day-2-operations/'],
       [`Architecture diagram for ${scenario}`, `/scenarios/${scenario}/`],
-      ['Day-2 operations runbook', '/reference/day-2-operations/'],
     ];
     if (state.answers.hybrid === 'yes') {
-      nextSteps.splice(2, 0, ['Configure the on-premises VPN connection', '/reference/vpn-post-deploy/']);
+      nextSteps.push(['Configure the on-premises VPN connection', '/reference/vpn-post-deploy/']);
     }
+    if (hasMg) {
+      nextSteps.push(['Move subscriptions into MG hierarchy', '/governance/management-groups/']);
+    }
+    nextSteps.push(['Day-2 operations runbook', '/reference/day-2-operations/']);
     nextSteps.forEach(([t, href]) => ul.appendChild(el('li', {}, el('a', { href }, t))));
     root.appendChild(ul);
 
+    // Start over
     const actions = el('div', { class: 'actions' });
     actions.appendChild(el('button', {
       type: 'button', class: 'secondary',
@@ -973,6 +1298,7 @@ function render(root) {
         state.step = 0;
         state.answers = createInitialAnswers();
         state._direction = 1;
+        if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('launchpad-wizard');
         draw();
       },
     }, 'Start over'));
@@ -1000,6 +1326,12 @@ export {
   buildBicepParams,
   buildCommands,
   buildBicepCommands,
+  buildPreviewCommands,
+  buildApplyCommands,
+  buildVerifyCommands,
   buildMgTfvars,
   buildMgBicepParams,
+  buildMgPreviewCommands,
+  buildMgApplyCommands,
+  buildDeploymentReadme,
 };

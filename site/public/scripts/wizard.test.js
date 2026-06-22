@@ -21,8 +21,13 @@ import {
   buildBicepParams,
   buildCommands,
   buildBicepCommands,
+  buildPreviewCommands,
+  buildApplyCommands,
+  buildVerifyCommands,
   buildMgTfvars,
   buildMgBicepParams,
+  buildMgPreviewCommands,
+  buildMgApplyCommands,
 } from './wizard.js';
 
 const platformAnswers = {
@@ -315,5 +320,120 @@ describe('QUESTIONS', () => {
     const hybrid = QUESTIONS.find((q) => q.id === 'hybrid');
     assert.match(hybrid.impact, /post-deploy VPN connection guide/);
     assert.doesNotMatch(hybrid.impact, /next step/);
+  });
+
+  test('deploy_method is the third question', () => {
+    assert.equal(QUESTIONS[2].id, 'deploy_method');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildPreviewCommands / buildApplyCommands / buildVerifyCommands
+// ---------------------------------------------------------------------------
+describe('buildPreviewCommands', () => {
+  test('generates terraform single-sub preview command', () => {
+    const out = buildPreviewCommands({
+      iac_platform: 'terraform',
+      intent: 'evaluate',
+      egress: 'none',
+      hybrid: 'no',
+      subscription_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      location: 'eastus',
+      name_prefix: 'test',
+    });
+    assert.match(out, /deploy\.sh plan/);
+    assert.match(out, /--iac terraform/);
+    assert.match(out, /--mode single/);
+    assert.match(out, /--scenario baseline/);
+  });
+
+  test('generates bicep multi-sub preview command', () => {
+    const out = buildPreviewCommands({
+      iac_platform: 'bicep',
+      intent: 'platform',
+      egress: 'firewall',
+      hybrid: 'no',
+      connectivity_subscription_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      management_subscription_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+      landingzone_subscription_id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+      location: 'westcentralus',
+      name_prefix: 'plat',
+    });
+    assert.match(out, /deploy\.sh plan/);
+    assert.match(out, /--iac bicep/);
+    assert.match(out, /--mode multi/);
+    assert.match(out, /--scenario firewall/);
+  });
+});
+
+describe('buildApplyCommands', () => {
+  test('generates terraform single-sub apply command', () => {
+    const out = buildApplyCommands({
+      iac_platform: 'terraform',
+      intent: 'evaluate',
+      egress: 'none',
+      hybrid: 'no',
+      subscription_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      location: 'eastus',
+      name_prefix: 'test',
+    });
+    assert.match(out, /deploy\.sh apply/);
+    assert.match(out, /--plan-file/);
+  });
+});
+
+describe('buildVerifyCommands', () => {
+  test('generates verify command with scenario and mode', () => {
+    const out = buildVerifyCommands({
+      iac_platform: 'terraform',
+      intent: 'evaluate',
+      egress: 'none',
+      hybrid: 'no',
+      subscription_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      location: 'eastus',
+      name_prefix: 'test',
+    });
+    assert.match(out, /verify\.sh/);
+    assert.match(out, /--scenario baseline/);
+    assert.match(out, /--mode single/);
+  });
+});
+
+describe('buildMgPreviewCommands', () => {
+  test('generates terraform MG preview', () => {
+    const out = buildMgPreviewCommands({
+      iac_platform: 'terraform',
+      tenant_id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+      location: 'eastus',
+      name_prefix: 'test',
+    });
+    assert.match(out, /terraform plan/);
+    assert.match(out, /mg\.auto\.tfvars/);
+  });
+
+  test('generates bicep MG preview (what-if)', () => {
+    const out = buildMgPreviewCommands({
+      iac_platform: 'bicep',
+      tenant_id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+      location: 'eastus',
+      name_prefix: 'test',
+    });
+    assert.match(out, /what-if/);
+    assert.match(out, /tenant/);
+  });
+});
+
+describe('buildMgApplyCommands', () => {
+  test('generates terraform MG apply', () => {
+    const out = buildMgApplyCommands({ iac_platform: 'terraform' });
+    assert.match(out, /terraform apply mg\.tfplan/);
+  });
+
+  test('generates bicep MG apply', () => {
+    const out = buildMgApplyCommands({
+      iac_platform: 'bicep',
+      location: 'eastus',
+    });
+    assert.match(out, /az deployment tenant create/);
   });
 });

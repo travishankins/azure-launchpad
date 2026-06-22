@@ -82,4 +82,18 @@ for sub in "${SUBSCRIPTIONS[@]}"; do
   }
 done
 
+# Multi-sub: verify Network Contributor on connectivity sub (needed for cross-sub peering)
+if [[ "$MODE" == "multi" ]]; then
+  PRINCIPAL_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || az account show --query user.name -o tsv)
+  if [[ -n "$PRINCIPAL_ID" ]]; then
+    NC_ROLE=$(az role assignment list --subscription "$CONN_SUB" --assignee "$PRINCIPAL_ID" \
+      --query "[?roleDefinitionName=='Network Contributor' || roleDefinitionName=='Contributor' || roleDefinitionName=='Owner'].roleDefinitionName | [0]" -o tsv 2>/dev/null)
+    if [[ -z "$NC_ROLE" ]]; then
+      echo "WARNING: Current identity may lack Network Contributor on connectivity sub ($CONN_SUB)." >&2
+      echo "         Cross-subscription VNet peering will fail without it." >&2
+      echo "         Grant with: az role assignment create --assignee \$PRINCIPAL_ID --role 'Network Contributor' --scope /subscriptions/$CONN_SUB" >&2
+    fi
+  fi
+fi
+
 echo "Preflight passed: iac=$IAC mode=$MODE subscriptions=${#SUBSCRIPTIONS[@]}"

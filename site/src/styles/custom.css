@@ -1,4 +1,4 @@
-/* Azure Launchpad (SMB / SMEC Edition) — site customizations */
+/* Azure Launchpad — site customizations */
 
 :root {
   --sl-color-accent-low: #0b3d91;
@@ -319,4 +319,140 @@
 
 :root[data-theme='dark'] .wizard .wizard-secret-warning {
   background: rgba(212, 160, 23, 0.12);
+}
+
+/* ---------------------------------------------------------------------------
+ * Wizard — progress bar
+ * ------------------------------------------------------------------------- */
+.wizard .wizard-progress {
+  height: 6px;
+  background: var(--sl-color-gray-5);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+.wizard .wizard-progress-fill {
+  height: 100%;
+  background: var(--sl-color-accent);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.wizard .wizard-step-count {
+  font-size: 0.8rem;
+  color: var(--sl-color-gray-3);
+  margin: 0 0 1rem 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Wizard — fieldset / legend (accessibility wrapper)
+ * ------------------------------------------------------------------------- */
+.wizard .wizard-fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+.wizard .wizard-fieldset legend {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  padding: 0;
+  color: var(--sl-color-text);
+}
+
+/* ---------------------------------------------------------------------------
+ * Wizard — review table
+ * ------------------------------------------------------------------------- */
+.wizard .wizard-review-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+.wizard .wizard-review-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--sl-color-gray-5);
+}
+.wizard .wizard-review-table .review-label {
+  width: 35%;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * Wizard — deployment stages (expandable <details>)
+ * ------------------------------------------------------------------------- */
+.wizard .wizard-stage {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+.wizard .wizard-stage summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  background: var(--sl-color-bg);
+  list-style: none;
+}
+.wizard .wizard-stage summary::-webkit-details-marker { display: none; }
+.wizard .wizard-stage summary::before {
+  content: '\25B6';
+  font-size: 0.65rem;
+  transition: transform 0.2s;
+  color: var(--sl-color-gray-3);
+}
+.wizard .wizard-stage[open] summary::before {
+  transform: rotate(90deg);
+}
+.wizard .wizard-stage .stage-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--sl-color-accent);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.wizard .wizard-stage .stage-title {
+  flex: 1;
+}
+.wizard .wizard-stage .stage-body {
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--sl-color-gray-5);
+}
+.wizard .wizard-stage-caution {
+  border-color: #d4a017;
+}
+.wizard .wizard-stage-caution summary {
+  background: rgba(212, 160, 23, 0.06);
+}
+:root[data-theme='dark'] .wizard .wizard-stage-caution summary {
+  background: rgba(212, 160, 23, 0.10);
+}
+
+/* ---------------------------------------------------------------------------
+ * Wizard — steps list (OIDC checklist)
+ * ------------------------------------------------------------------------- */
+.wizard .wizard-steps {
+  padding-left: 1.5rem;
+  line-height: 1.8;
+}
+.wizard .wizard-steps li {
+  margin-bottom: 0.25rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Wizard — download links
+ * ------------------------------------------------------------------------- */
+.wizard .wizard-download {
+  display: inline-block;
+  margin-right: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
 }

@@ -73,3 +73,16 @@ if [[ "$failures" -gt 0 ]]; then
   exit 1
 fi
 echo "Verification passed."
+echo ""
+echo "=== Next steps ==="
+echo "• Wire diagnostic settings to the Log Analytics workspace (rg-monitor-${SUFFIX})."
+echo "  See: https://azurelaunchpad.com/reference/day-2-operations/"
+if [[ "$SCENARIO" == "vpn" || "$SCENARIO" == "full" ]]; then
+  echo "• VPN Gateway is deployed but not yet connected to on-premises."
+  echo "  See: https://azurelaunchpad.com/reference/vpn-post-deploy/"
+fi
+if [[ "$MODE" == "multi" ]]; then
+  echo "• Move subscriptions into the Management Group hierarchy (if deployed)."
+  echo "  See: https://azurelaunchpad.com/governance/management-groups/"
+fi
+echo "• Set up a day-2 drift-detection schedule (terraform plan or az deployment what-if)."
