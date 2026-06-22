@@ -93,11 +93,11 @@ az ad app federated-credential create --id $APP_ID --parameters '{
   "audiences":["api://AzureADTokenExchange"]
 }'
 
-# 3d. Management Groups apply (TF + Bicep) — environment "prod-tenant"
+# 3d. Management Groups apply (TF + Bicep) — environment "apply-mg"
 az ad app federated-credential create --id $APP_ID --parameters '{
-  "name":"gha-prod-tenant",
+  "name":"gha-apply-mg",
   "issuer":"https://token.actions.githubusercontent.com",
-  "subject":"repo:'$REPO':environment:prod-tenant",
+  "subject":"repo:'$REPO':environment:apply-mg",
   "audiences":["api://AzureADTokenExchange"]
 }'
 ```

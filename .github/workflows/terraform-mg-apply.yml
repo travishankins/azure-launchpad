@@ -8,11 +8,7 @@ on:
         required: true
         default: "minimal"
         type: choice
-        options: [ minimal, full ]
-  push:
-    branches: [ main ]
-    paths:
-      - "infra/terraform/management-groups/**"
+        options: [minimal, full]
 
 permissions:
   id-token: write

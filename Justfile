@@ -84,6 +84,10 @@ docs:
 docs-build:
     cd site && npm install && npm run build
 
+# Run configuration generator (wizard) unit tests.
+wizard-test:
+    node --test site/public/scripts/wizard.test.js
+
 # --------------------------------------------------------------------------- #
 # Quality gates
 # --------------------------------------------------------------------------- #

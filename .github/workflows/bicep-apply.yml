@@ -7,12 +7,7 @@ on:
         description: "Scenario to deploy"
         required: true
         type: choice
-        options: [ baseline, firewall, vpn, full ]
-  push:
-    branches: [ main ]
-    paths:
-      - "infra/bicep/foundation/**"
-      - ".github/workflows/bicep-apply.yml"
+        options: [baseline, firewall, vpn, full]
 
 permissions:
   id-token: write
