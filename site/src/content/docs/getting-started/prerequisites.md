@@ -7,11 +7,11 @@ description: What you need before deploying the Azure Launchpad (SMB / SMEC Edit
 
 Pick whichever matches the situation. All three deploy the same foundation; the difference is where the tooling lives.
 
-| Option                                  | Best for                                                  | Setup time | Cost         | Persistence                         |
-| --------------------------------------- | --------------------------------------------------------- | ---------- | ------------ | ----------------------------------- |
-| **A. Azure Cloud Shell** (browser)      | One-off deploys, evaluations, customer demos, no laptop install | ~1 min     | Free shell + ~$0.05/mo for 5 GB clouddrive | 5 GB home dir survives sessions    |
+| Option                                       | Best for                                                            | Setup time                      | Cost                                       | Persistence                            |
+| -------------------------------------------- | ------------------------------------------------------------------- | ------------------------------- | ------------------------------------------ | -------------------------------------- |
+| **A. Azure Cloud Shell** (browser)           | One-off deploys, evaluations, customer demos, no laptop install     | ~1 min                          | Free shell + ~$0.05/mo for 5 GB clouddrive | 5 GB home dir survives sessions        |
 | **B. GitHub Codespaces** (browser / VS Code) | Multi-day work, contributing back, working from a Chromebook / iPad | ~2 min (first) / ~30 s (resume) | Free tier 60 h/mo on 2-core; then per-hour | Whole container survives until deleted |
-| **C. Local install** (your laptop)      | Daily driver, offline work, custom toolchain pinning      | 10–30 min  | Free         | Forever                             |
+| **C. Local install** (your laptop)           | Daily driver, offline work, custom toolchain pinning                | 10–30 min                       | Free                                       | Forever                                |
 
 If you've never deployed Launchpad before, start with **Cloud Shell**. If you're going to maintain it, switch to **Codespaces** or **local**.
 
@@ -43,16 +43,16 @@ Then continue with the [Terraform](/getting-started/quick-start/) or [Bicep](/ge
 
 **What's preinstalled in Cloud Shell** (versions move; check with `--version`):
 
-| Tool       | Available?                  | Notes                                                |
-| ---------- | --------------------------- | ---------------------------------------------------- |
-| Azure CLI  | ✅ latest, with `bicep` ext  | `az`, `az bicep build`                               |
-| Terraform  | ✅ 1.x                       | If older than 1.9, see "Pinning Terraform" below     |
-| Bicep      | ✅ via `az bicep`            | Standalone `bicep` binary also available             |
-| Git        | ✅                          |                                                      |
-| GitHub CLI | ✅                          | `gh`                                                 |
-| jq, curl   | ✅                          |                                                      |
-| `just`     | ❌ not preinstalled          | Optional — install once: `brew install just` won't work; use the binary release from <https://just.systems> or skip and run the underlying commands directly |
-| `tflint`, `pre-commit` | ❌                | Only needed for contributing back, not for deploys   |
+| Tool                   | Available?                  | Notes                                                                                                                                                        |
+| ---------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Azure CLI              | ✅ latest, with `bicep` ext | `az`, `az bicep build`                                                                                                                                       |
+| Terraform              | ✅ 1.x                      | If older than 1.9, see "Pinning Terraform" below                                                                                                             |
+| Bicep                  | ✅ via `az bicep`           | Standalone `bicep` binary also available                                                                                                                     |
+| Git                    | ✅                          |                                                                                                                                                              |
+| GitHub CLI             | ✅                          | `gh`                                                                                                                                                         |
+| jq, curl               | ✅                          |                                                                                                                                                              |
+| `just`                 | ❌ not preinstalled         | Optional — install once: `brew install just` won't work; use the binary release from <https://just.systems> or skip and run the underlying commands directly |
+| `tflint`, `pre-commit` | ❌                          | Only needed for contributing back, not for deploys                                                                                                           |
 
 **Pinning Terraform.** If Cloud Shell's bundled Terraform is older than what the repo requires (≥ 1.9), the easiest fix is `tfenv`:
 
@@ -124,13 +124,13 @@ VS Code extensions are pre-pinned: HashiCorp Terraform, Bicep, Azure Resource Gr
 
 Useful if you want offline work, custom Terraform pinning, or zero browser dependency.
 
-| Tool                  | Minimum version | Why                             |
-| --------------------- | --------------- | ------------------------------- |
-| Terraform             | 1.9             | Module syntax, validation rules |
-| Azure CLI             | 2.60            | `az login`, bootstrap script    |
-| Bicep CLI             | 0.30            | Bundled with `az bicep install` |
-| GitHub CLI (optional) | 2.40            | OIDC federated credential setup |
-| `git`                 | 2.30            | Clone the repo                  |
+| Tool                  | Minimum version | Why                                 |
+| --------------------- | --------------- | ----------------------------------- |
+| Terraform             | 1.9             | Module syntax, validation rules     |
+| Azure CLI             | 2.60            | `az login`, bootstrap script        |
+| Bicep CLI             | 0.30            | Bundled with `az bicep install`     |
+| GitHub CLI (optional) | 2.40            | OIDC federated credential setup     |
+| `git`                 | 2.30            | Clone the repo                      |
 | `just` (optional)     | latest          | Recipe runner — `brew install just` |
 
 ```bash

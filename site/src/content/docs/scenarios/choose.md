@@ -44,12 +44,12 @@ flowchart TD
 
 ## Quick reference
 
-| If you need…                          | Pick                                              |
-| ------------------------------------- | ------------------------------------------------- |
-| Lowest cost, dev/test, small workload | [Baseline](/scenarios/baseline/)                  |
-| Egress filtering / compliance         | [Firewall](/scenarios/firewall/)                  |
-| Hybrid connectivity to on-prem        | [VPN](/scenarios/vpn/)                            |
-| Both egress filtering and hybrid      | [Full](/scenarios/full/)                          |
+| If you need…                          | Pick                                                 |
+| ------------------------------------- | ---------------------------------------------------- |
+| Lowest cost, dev/test, small workload | [Baseline](/scenarios/baseline/)                     |
+| Egress filtering / compliance         | [Firewall](/scenarios/firewall/)                     |
+| Hybrid connectivity to on-prem        | [VPN](/scenarios/vpn/)                               |
+| Both egress filtering and hybrid      | [Full](/scenarios/full/)                             |
 | Separate subs per ALZ layer           | [Multi-subscription](/scenarios/multi-subscription/) |
 
 Once you've picked a scenario, the [configuration generator](/wizard/) generates the matching `tfvars` or `bicepparam` file.

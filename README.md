@@ -19,7 +19,7 @@ Opinionated Azure **landing zones** for **small and midsized businesses (SMB)** 
 
 📘 **Full docs + interactive configuration generator:** [azurelaunchpad.com](https://azurelaunchpad.com/) — try the [configuration generator](https://azurelaunchpad.com/wizard/). Source for the site lives in [`site/`](./site/) and is published by [`.github/workflows/site-deploy.yml`](./.github/workflows/site-deploy.yml).
 
-> ℹ️ See [Non-goals](https://azurelaunchpad.com/reference/non-goals/) for what Launchpad intentionally does *not* do.
+> ℹ️ See [Non-goals](https://azurelaunchpad.com/reference/non-goals/) for what Launchpad intentionally does _not_ do.
 
 ## Prerequisites
 

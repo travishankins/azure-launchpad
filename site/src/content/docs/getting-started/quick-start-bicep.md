@@ -46,7 +46,7 @@ That's it. To switch scenarios, just point `--parameters` at a different `.bicep
 
 ## Switching from Terraform to Bicep (or back)
 
-The two roots manage the *same* resource names by design (`rg-hub-contoso-wcus`, `vnet-hub-contoso-wcus`, etc.). **Do not** run both against the same subscription with the same `namePrefix`/`name_prefix` — pick one IaC and stick with it for that environment.
+The two roots manage the _same_ resource names by design (`rg-hub-contoso-wcus`, `vnet-hub-contoso-wcus`, etc.). **Do not** run both against the same subscription with the same `namePrefix`/`name_prefix` — pick one IaC and stick with it for that environment.
 
 > **Tip** — use the [configuration generator](/wizard/) and pick **Bicep** at step 1 to generate a `wizard.bicepparam` file tailored to your customer's needs.
 

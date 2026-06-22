@@ -12,9 +12,9 @@ This repo ships **8 GitHub Actions workflows** under `.github/workflows/` — a 
 | `bicep-plan.yml`         | PR to `main` touching `infra/bicep/foundation/**`            | `bicep build`, `az deployment sub what-if` for the chosen scenario, posts results as a PR comment.       |
 | `bicep-apply.yml`        | Manual `workflow_dispatch`                                   | `az deployment sub create` for the chosen scenario. Gated by the `apply` environment.                    |
 | `terraform-mg-plan.yml`  | PR to `main` touching `infra/terraform/management-groups/**` | `validate` + `plan` for the MG hierarchy at tenant scope.                                                |
-| `terraform-mg-apply.yml` | Manual `workflow_dispatch`                                   | `apply` for the MG hierarchy. Gated by the `apply-mg` environment.                                      |
+| `terraform-mg-apply.yml` | Manual `workflow_dispatch`                                   | `apply` for the MG hierarchy. Gated by the `apply-mg` environment.                                       |
 | `bicep-mg-plan.yml`      | PR to `main` touching `infra/bicep/management-groups/**`     | `bicep build` + `az deployment tenant what-if`.                                                          |
-| `bicep-mg-apply.yml`     | Manual `workflow_dispatch`                                   | `az deployment tenant create`. Gated by the `apply-mg` environment.                                     |
+| `bicep-mg-apply.yml`     | Manual `workflow_dispatch`                                   | `az deployment tenant create`. Gated by the `apply-mg` environment.                                      |
 
 ---
 
@@ -127,11 +127,11 @@ az ad app federated-credential create --id $APP_ID --parameters '{
 
 **Settings → Environments → New environment**, create these and enable **Required reviewers** on each:
 
-| Environment   | Used by                                        |
-| ------------- | ---------------------------------------------- |
-| `prod`        | `terraform-apply.yml`                          |
-| `apply`       | `bicep-apply.yml`                              |
-| `apply-mg`    | `terraform-mg-apply.yml`, `bicep-mg-apply.yml` |
+| Environment | Used by                                        |
+| ----------- | ---------------------------------------------- |
+| `prod`      | `terraform-apply.yml`                          |
+| `apply`     | `bicep-apply.yml`                              |
+| `apply-mg`  | `terraform-mg-apply.yml`, `bicep-mg-apply.yml` |
 
 This forces a human approval click before any apply runs against your subscription or tenant.
 
