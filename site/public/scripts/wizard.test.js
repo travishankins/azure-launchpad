@@ -12,6 +12,7 @@ globalThis.URL.createObjectURL = () => '';
 
 import {
   QUESTIONS,
+  createInitialAnswers,
   deriveScenario,
   resolveDeploymentMode,
   isStepSkipped,
@@ -20,7 +21,35 @@ import {
   buildBicepParams,
   buildCommands,
   buildBicepCommands,
+  buildMgTfvars,
+  buildMgBicepParams,
 } from './wizard.js';
+
+const platformAnswers = {
+  intent: 'platform',
+  egress: 'none',
+  hybrid: 'no',
+  connectivity_subscription_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  management_subscription_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+  landingzone_subscription_id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+  tenant_id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+  location: 'eastus',
+  name_prefix: 'test',
+  mg_optional: ['local', 'decommissioned', 'sandboxes'],
+  mg_policies: 'starter',
+};
+
+describe('createInitialAnswers', () => {
+  test('returns fresh defaults without retaining prior answers', () => {
+    const first = createInitialAnswers();
+    first.iac_platform = 'bicep';
+    first.mg_optional.push('identity');
+
+    const second = createInitialAnswers();
+    assert.equal(second.iac_platform, 'terraform');
+    assert.deepEqual(second.mg_optional, ['local', 'decommissioned', 'sandboxes']);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // deriveScenario
@@ -239,6 +268,25 @@ describe('buildBicepCommands', () => {
   });
 });
 
+describe('management-group parameter generation', () => {
+  test('Terraform uses the management subscription and places all platform subscriptions', () => {
+    const out = buildMgTfvars(platformAnswers);
+    assert.match(out, /subscription_id = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"/);
+    assert.match(out, /"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" = "connectivity"/);
+    assert.match(out, /"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"\s+= "management"/);
+    assert.match(out, /"cccccccc-cccc-cccc-cccc-cccccccccccc"\s+= "corp"/);
+    assert.ok(!out.includes('undefined'));
+  });
+
+  test('Bicep places all platform subscriptions', () => {
+    const out = buildMgBicepParams(platformAnswers);
+    assert.match(out, /'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa': 'connectivity'/);
+    assert.match(out, /'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb': 'management'/);
+    assert.match(out, /'cccccccc-cccc-cccc-cccc-cccccccccccc': 'corp'/);
+    assert.ok(!out.includes('undefined'));
+  });
+});
+
 // ---------------------------------------------------------------------------
 // QUESTIONS array structure
 // ---------------------------------------------------------------------------
@@ -257,5 +305,11 @@ describe('QUESTIONS', () => {
       assert.ok(q.label, `missing label for ${q.id}`);
       assert.ok(q.type, `missing type for ${q.id}`);
     }
+  });
+
+  test('VPN copy points to post-deploy configuration instead of a nonexistent next step', () => {
+    const hybrid = QUESTIONS.find((q) => q.id === 'hybrid');
+    assert.match(hybrid.impact, /post-deploy VPN connection guide/);
+    assert.doesNotMatch(hybrid.impact, /next step/);
   });
 });
