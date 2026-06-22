@@ -198,6 +198,19 @@ describe('buildTfvars', () => {
     assert.match(out, /deployment_mode\s+=\s+"multi"/);
     assert.match(out, /connectivity_subscription_id/);
   });
+
+  test('multi-sub fallback subscription_id uses management, not connectivity', () => {
+    const multi = {
+      ...baseAnswers,
+      intent: 'platform',
+      connectivity_subscription_id: 'conn-sub-id',
+      management_subscription_id: 'mgmt-sub-id',
+      landingzone_subscription_id: 'lz-sub-id',
+    };
+    const out = buildTfvars(multi);
+    // The top-level fallback line should be mgmt, not connectivity
+    assert.match(out, /^subscription_id = "mgmt-sub-id"/m);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -410,6 +423,8 @@ describe('buildMgPreviewCommands', () => {
     });
     assert.match(out, /terraform plan/);
     assert.match(out, /mg\.auto\.tfvars/);
+    assert.match(out, /backend\.hcl/);
+    assert.doesNotMatch(out, /<from-bootstrap>/);
   });
 
   test('generates bicep MG preview (what-if)', () => {
@@ -457,6 +472,7 @@ describe('buildDeploymentReadme', () => {
     assert.match(out, /preflight\.sh/);
     assert.match(out, /--config/);
     assert.match(out, /bootstrap-state\.sh/);
+    assert.match(out, /REGION_SHORT=eus/);
   });
 
   test('actions flow omits local commands and shows OIDC setup', () => {
