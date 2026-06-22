@@ -18,7 +18,7 @@ jobs:
   build-validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Bicep build (lint)
         run: |
           for f in ${{ env.WORKING_DIR }}/main.bicep ${{ env.WORKING_DIR }}/modules/*.bicep; do
@@ -53,7 +53,7 @@ jobs:
         scenario: [ baseline, firewall, vpn, full ]
     environment: plan
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Azure login (OIDC)
         uses: azure/login@v3
         with:
