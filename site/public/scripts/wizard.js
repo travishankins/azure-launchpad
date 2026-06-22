@@ -708,13 +708,14 @@ Full guide: https://azurelaunchpad.com/reference/cicd/
     : `--subscription ${answers.subscription_id}`;
   const configArg = `--config ${paramFolder}/${paramFileName}`;
   const preflightCmd = `./scripts/preflight.sh --iac ${isBicep ? 'bicep' : 'terraform'} --mode ${mode} \\\n  ${subArgs} \\\n  ${configArg}`;
+  const bootstrapSub = isMulti ? answers.management_subscription_id : answers.subscription_id;
   const bootstrapSection = isBicep ? '' : `
 ### Bootstrap state backend (first time only)
 \`\`\`bash
-./scripts/bootstrap-state.sh \\
-  --subscription ${isMulti ? answers.management_subscription_id : answers.subscription_id} \\
-  --name-prefix ${answers.name_prefix} \\
-  --region ${answers.location}
+ARM_SUBSCRIPTION_ID=${bootstrapSub} \
+PREFIX=${answers.name_prefix} \
+LOCATION=${answers.location} \
+  ./scripts/bootstrap-state.sh
 \`\`\`
 `;
 
@@ -1322,7 +1323,8 @@ function render(root) {
         ? `./scripts/preflight.sh --iac bicep --mode ${mode} \\\n  ${subArgs} \\\n  ${configArg}`
         : `./scripts/preflight.sh --iac terraform --mode ${mode} \\\n  ${subArgs} \\\n  ${configArg}`;
       if (!isBicep) {
-        preflightCmd = `# Bootstrap Terraform state backend (first time only)\n./scripts/bootstrap-state.sh \\\n  --subscription ${mode === 'multi' ? state.answers.management_subscription_id : state.answers.subscription_id} \\\n  --name-prefix ${state.answers.name_prefix} \\\n  --region ${state.answers.location}\n\n# Validate tooling, auth, and subscription access\n${preflightCmd}`;
+        const bootstrapSub = mode === 'multi' ? state.answers.management_subscription_id : state.answers.subscription_id;
+        preflightCmd = `# Bootstrap Terraform state backend (first time only)\nARM_SUBSCRIPTION_ID=${bootstrapSub} \\\nPREFIX=${state.answers.name_prefix} \\\nLOCATION=${state.answers.location} \\\n  ./scripts/bootstrap-state.sh\n\n# Validate tooling, auth, and subscription access\n${preflightCmd}`;
       }
       root.appendChild(stage(2, 'Preflight checks', '', (body) => {
         body.appendChild(el('p', {}, isBicep
