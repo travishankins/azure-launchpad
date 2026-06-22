@@ -25,5 +25,5 @@ description: Answer a few questions and get a tailored parameter file plus the e
 
 <script
   type="module"
-  src={`${import.meta.env.BASE_URL}scripts/wizard.js`}
+  src={`${import.meta.env.BASE_URL}scripts/wizard.js?v=${import.meta.env.PUBLIC_BUILD_SHA ?? "dev"}`}
 ></script>

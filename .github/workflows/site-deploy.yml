@@ -37,6 +37,7 @@ jobs:
           # Custom domain (azurelaunchpad.com) — site/base default to '/'
           # in astro.config.mjs, so no SITE_BASE override here.
           GH_OWNER: ${{ github.repository_owner }}
+          PUBLIC_BUILD_SHA: ${{ github.sha }}
           SITE_URL: https://azurelaunchpad.com
         run: npm run build
       - uses: actions/configure-pages@v6
