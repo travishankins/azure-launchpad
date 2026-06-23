@@ -70,7 +70,7 @@ Microsoft's full ALZ reference adds an **Identity** sub (AD DS / Entra DS) and p
 │  └─ peer-spoke-to-hub                                                        │
 │                                                                              │
 │  rg-security-<suffix>                                                        │
-│  └─ Key Vault + Private Endpoint (PDZ wired from connectivity sub)           │
+│  └─ Key Vault + Private Endpoint (private DNS zone linked from connectivity) │
 │                                                                              │
 │  rg-migrate-<suffix>      (empty placeholder for Migrate / staging)          │
 └──────────────────────────────────────────────────────────────────────────────┘

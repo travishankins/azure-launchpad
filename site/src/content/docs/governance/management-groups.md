@@ -14,7 +14,7 @@ If you want ALZ-aligned governance — tenant-scoped policy assignments, MG-base
 - **Different state.** Stored under a different backend key (`management-groups.<scenario>.tfstate`).
 - **Different RBAC.** The deploying principal needs `Management Group Contributor` (and `Resource Policy Contributor` for policies) at Tenant Root — not just Contributor on a sub.
 
-## Hierarchy (SMB-friendly defaults)
+## Hierarchy (defaults)
 
 ```mermaid
 flowchart TD

@@ -1,6 +1,6 @@
 ---
 title: Prerequisites
-description: What you need before deploying the Azure Launchpad (SMB / SMEC Edition) landing zone — Cloud Shell, Codespaces, or local install.
+description: What you need before deploying the Azure Launchpad landing zone — Cloud Shell, Codespaces, or local install.
 ---
 
 ## Choose your environment

@@ -596,7 +596,7 @@ function buildMgTfvars(answers) {
         `  "Restrict-Local-Disconn" = {`,
         `    scope_mg_key      = "local"`,
         `    policy_definition = "/providers/Microsoft.Authorization/policyDefinitions/dabf7c7f-5354-42de-a92a-8367f538dd71"`,
-        `    enforce           = false # Audit; flip true once exit story is ready`,
+        `    enforce           = false # Audit; flip true after validating disconnected workload requirements`,
         `  }`,
       );
     }
@@ -1353,7 +1353,7 @@ function render(root) {
     const downloadCard = el('div', { class: 'wizard-download-card' });
     downloadCard.appendChild(el('strong', {}, 'Download your deployment kit'));
     const dlList = el('div', { class: 'wizard-download-links' });
-    if (!(isBicep && isMulti)) {
+    if (!(isBicep && isMulti) && !isActions) {
       dlList.appendChild(el('a', {
         href: URL.createObjectURL(new Blob([paramFile], { type: 'text/plain' })),
         download: paramFileName,
