@@ -55,11 +55,11 @@ Copy any of these into your tfvars. Verify the definition ID against the Azure P
 | `Deploy-Diag-Activity` | `root`         | Send activity logs to Log Analytics |
 | `Deploy-VM-Monitoring` | `landingzones` | Auto-deploy AMA + DCR for VMs       |
 
-### Azure Local exit-readiness (ALZ 2026.04 — preview)
+### Azure Local disconnected workloads (ALZ 2026.04 — preview)
 
 | Name                     | Scope   | Policy                                                                                                                                                                                                        |
 | ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Restrict-Local-Disconn` | `local` | Restrict resource types to those supported in Azure Local disconnected ops — `dabf7c7f-5354-42de-a92a-8367f538dd71`. Start with `enforce = false` (Audit), then flip to `true` once your exit story is ready. |
+| `Restrict-Local-Disconn` | `local` | Restrict resource types to those supported in Azure Local disconnected ops — `dabf7c7f-5354-42de-a92a-8367f538dd71`. Start with `enforce = false` (Audit), then flip to `true` after validating disconnected workload requirements. |
 
 ### Sovereign Public Cloud (per ALZ 2026.04 SLZ update)
 

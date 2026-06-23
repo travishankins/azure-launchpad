@@ -3,7 +3,7 @@ title: Management Groups (optional)
 description: Opt-in ALZ-aligned Management Group hierarchy for Azure Launchpad, including the Local MG and how it pairs with single-sub or multi-sub foundation deployments.
 ---
 
-The core `foundation` module deploys a hub-spoke landing zone — either into **one subscription** (`single` mode, the default) or **across three subscriptions** (`multi` mode, ALZ-aligned — see [Multi-subscription](/scenarios/multi-subscription/)). In both cases, no Management Groups (MGs) are created. For most SMB customers that's the right starting point.
+The core `foundation` module deploys a hub-spoke landing zone — either into **one subscription** (`single` mode, the default) or **across three subscriptions** (`multi` mode, ALZ-aligned — see [Multi-subscription](/scenarios/multi-subscription/)). In both cases, no Management Groups (MGs) are created. For most organizations that's the right starting point.
 
 If you want ALZ-aligned governance — tenant-scoped policy assignments, MG-based RBAC, and an upgrade path to enterprise ALZ — deploy the **separate, opt-in** `management-groups` root module from this repo. It pairs cleanly with either foundation mode.
 

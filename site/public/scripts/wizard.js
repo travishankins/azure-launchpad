@@ -668,7 +668,7 @@ function buildMgBicepParams(answers) {
         `  'Restrict-Local-Disconn': {`,
         `    scopeMgKey: 'local'`,
         `    policyDefinition: '/providers/Microsoft.Authorization/policyDefinitions/dabf7c7f-5354-42de-a92a-8367f538dd71'`,
-        `    enforce: false  // Audit; flip true once exit story is ready`,
+        `    enforce: false  // Audit; flip true after validating disconnected workload requirements`,
         `  }`,
       );
     }

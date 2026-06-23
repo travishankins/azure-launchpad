@@ -213,7 +213,7 @@ az keyvault purge --name <kv-name>
 If you're tearing down manually rather than via `terraform destroy`, delete in **reverse of deploy order** to avoid orphaned cross-sub references:
 
 1. **Landing-zone** RGs first (so the spoke→hub peering and route table → firewall IP go away).
-2. **Connectivity** RG next (after landing-zone is gone, the hub-side peering and PDZ→spoke link have nothing dangling).
+2. **Connectivity** RG next (after landing-zone is gone, the hub-side peering and Private DNS Zone → spoke link have nothing dangling).
 3. **Management** RG last (so any final diagnostics from the other layers can land in LAW before it's gone).
 
 Terraform handles this ordering automatically via dependency graph.

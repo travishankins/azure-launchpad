@@ -84,7 +84,7 @@ Cross-subscription wires are the only thing that distinguishes multi-sub from si
 1. **Spoke → Hub VNet peering** — created in the landing-zone sub, references the hub VNet ID in the connectivity sub.
 2. **Hub → Spoke VNet peering** — created in the connectivity sub on a _second pass_, after the spoke exists.
 3. **Spoke route table → Firewall private IP** (`firewall` / `full`) — route table lives in the landing-zone sub; the next-hop IP belongs to the firewall in the connectivity sub.
-4. **Private DNS Zone → Spoke VNet link** — the PDZ for `privatelink.vaultcore.azure.net` lives in the connectivity sub; the link to the spoke VNet is created on the second connectivity pass.
+4. **Private DNS Zone → Spoke VNet link** — the Private DNS Zone for `privatelink.vaultcore.azure.net` lives in the connectivity sub; the link to the spoke VNet is created on the second connectivity pass.
 5. **LAW diagnostics** — every resource that emits diagnostic logs targets the LAW resource ID in the management sub.
 
 ## What lands where
@@ -227,7 +227,7 @@ That's it. The plan output will show resources prefixed with `module.vnet_hub`, 
 
 ## Bicep deploy
 
-Bicep doesn't have provider aliases, so multi-sub is implemented as **four `az deployment sub create` calls in a specific order**, each in its own subscription. Cross-sub outputs from earlier calls (firewall private IP, hub VNet ID, spoke VNet ID, PDZ ID) feed into later ones.
+Bicep doesn't have provider aliases, so multi-sub is implemented as **four `az deployment sub create` calls in a specific order**, each in its own subscription. Cross-sub outputs from earlier calls (firewall private IP, hub VNet ID, spoke VNet ID, Private DNS Zone ID) feed into later ones.
 
 The shared deployment script previews or runs the shipped [`scripts/deploy-multi-sub.sh`](https://github.com/travishankins/azure-launchpad/blob/main/scripts/deploy-multi-sub.sh) sequence:
 
@@ -320,7 +320,7 @@ Independent of the network layers. Creates Log Analytics, Automation Account, Re
 [`infra/bicep/foundation/multi-sub/`](https://github.com/travishankins/azure-launchpad/tree/main/infra/bicep/foundation/multi-sub):
 
 - `connectivity.bicep` — sub-scope wrapper. Creates `rg-hub`, calls `connectivity-hub.bicep`.
-- `connectivity-hub.bicep` — RG-scope. Hub VNet, firewall, VPN, PDZ, hub-side peering, cross-sub PDZ link.
+- `connectivity-hub.bicep` — RG-scope. Hub VNet, firewall, VPN, Private DNS Zone, hub-side peering, cross-sub DNS zone link.
 - `landingzone.bicep` — sub-scope wrapper. Creates spoke RGs, calls `landingzone-spoke.bicep` and `../modules/security.bicep`.
 - `landingzone-spoke.bicep` — RG-scope. Spoke VNet, NAT or route table, spoke-side peering.
 - `management.bicep` — sub-scope wrapper. Creates monitor + backup RGs and their resources.
@@ -368,7 +368,7 @@ az network vnet peering list -g rg-spoke-prod-contoso-wcus --vnet-name vnet-spok
 
 Both peerings should show `state=Connected` and `sync=FullyInSync`. If the hub side is missing, step 3 of the wrapper didn't run — re-run with the same args, it's idempotent.
 
-### 3. Cross-sub PDZ link
+### 3. Cross-sub Private DNS Zone link
 
 ```bash
 az account set --subscription $CONN_SUB
@@ -387,7 +387,7 @@ Deploy a tiny test VM in `snet-workload` and run:
 nslookup <kv-name>.vault.azure.net
 ```
 
-You should get a `privatelink.vaultcore.azure.net` CNAME resolving to a `10.0.2.x` private IP (or whatever your spoke address space is). If it resolves to a public IP, the cross-sub PDZ link is missing.
+You should get a `privatelink.vaultcore.azure.net` CNAME resolving to a `10.0.2.x` private IP (or whatever your spoke address space is). If it resolves to a public IP, the cross-sub Private DNS Zone link is missing.
 
 ### 5. (firewall / full only) Egress through firewall
 
@@ -420,7 +420,7 @@ The principal creating the spoke→hub peering doesn't have read access to the h
 
 ### `PrivateDnsZoneVirtualNetworkLinkAlreadyExists`
 
-You re-ran step 3 after partially editing the spoke VNet. The link exists but with a different `vnetId`. Delete the existing `link-spoke` from the PDZ and re-run:
+You re-ran step 3 after partially editing the spoke VNet. The link exists but with a different `vnetId`. Delete the existing `link-spoke` from the Private DNS Zone and re-run:
 
 ```bash
 az account set --subscription $CONN_SUB
