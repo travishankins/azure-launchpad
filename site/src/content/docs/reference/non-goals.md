@@ -7,7 +7,7 @@ Azure Launchpad is a small, opinionated landing-zone starter. To stay small and 
 
 ## Not in scope
 
-- **Not a full ALZ Accelerator.** Launchpad covers the foundation (networking, identity boundary, monitoring, optional governance) for SMB / SMEC scale. For enterprise-scale ALZ with dozens of policies, multiple regions, and full guardrails, see the [comparison vs the ALZ Accelerator](/reference/vs-alz-accelerator/).
+- **Not a full ALZ Accelerator.** Launchpad covers the foundation (networking, identity boundary, monitoring, optional governance) for small and midsized organizations. For enterprise-scale ALZ with dozens of policies, multiple regions, and full guardrails, see the [comparison vs the ALZ Accelerator](/reference/vs-alz-accelerator/).
 - **Not a managed service.** You own the deployment, the state file, the Azure subscription, and the lifecycle. Launchpad is code you clone, configure, and deploy.
 - **No workload deployment.** The foundation prepares the landing zone (RGs, VNets, Key Vault, monitoring, optional firewall/VPN). It does not deploy applications, App Service plans, AKS clusters, databases, or workload-specific resources. Layer those on top.
 - **VPN site-to-site connection deferred by design.** Foundation provisions the VPN Gateway (`VpnGw2AZ`), but the on-prem-specific pieces — Local Network Gateway, IPsec connection, PSK — are intentionally out of the foundation deploy because they require customer inputs (peer public IP, on-prem CIDRs, shared key). See [Post-deploy VPN connection](/reference/vpn-post-deploy/) for ready-to-use Terraform and Bicep snippets.

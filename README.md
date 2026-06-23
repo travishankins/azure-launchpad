@@ -1,4 +1,4 @@
-# 🚀 Azure Launchpad (SMB / SMEC Edition)
+# 🚀 Azure Launchpad
 
 [![Terraform plan](https://github.com/travishankins/azure-launchpad/actions/workflows/terraform-plan.yml/badge.svg?branch=main)](https://github.com/travishankins/azure-launchpad/actions/workflows/terraform-plan.yml)
 [![Bicep plan](https://github.com/travishankins/azure-launchpad/actions/workflows/bicep-plan.yml/badge.svg?branch=main)](https://github.com/travishankins/azure-launchpad/actions/workflows/bicep-plan.yml)

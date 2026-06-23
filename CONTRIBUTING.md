@@ -1,4 +1,4 @@
-# Contributing to Azure Launchpad (SMB / SMEC Edition)
+# Contributing to Azure Launchpad
 
 Thanks for your interest! This project deploys Azure landing zones via Terraform and Bicep, with an Astro / Starlight docs site that includes an interactive configuration generator. Contributions of all kinds are welcome — bug reports, feature ideas, doc tweaks, new modules, and tests.
 

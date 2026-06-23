@@ -1,32 +1,32 @@
 ---
 title: vs the ALZ Accelerator
-description: When to use Azure Launchpad (SMB / SMEC Edition) versus Microsoft's official Azure Landing Zone Accelerator for enterprise.
+description: When to use Azure Launchpad versus Microsoft's official Azure Landing Zone Accelerator for enterprise.
 ---
 
-Microsoft publishes an official [**Azure Landing Zone (ALZ) Accelerator**](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/) for both [Bicep](https://github.com/Azure/ALZ-Bicep) and [Terraform](https://github.com/Azure/terraform-azurerm-avm-ptn-alz). It's excellent — and large. **Azure Launchpad is intentionally smaller, opinionated, and SMB / SMEC-shaped.**
+Microsoft publishes an official [**Azure Landing Zone (ALZ) Accelerator**](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/) for both [Bicep](https://github.com/Azure/ALZ-Bicep) and [Terraform](https://github.com/Azure/terraform-azurerm-avm-ptn-alz). It's excellent — and large. **Azure Launchpad is intentionally smaller and opinionated — right-sized for small and midsized organizations.**
 
 This page helps you decide which one fits.
 
 ## TL;DR
 
-| Question                                               | Use Microsoft's ALZ Accelerator | Use Azure Launchpad |
-| ------------------------------------------------------ | ------------------------------- | ------------------- |
-| You have a dedicated platform team of 5+ people        | ✅                              | also fine           |
-| You'll run 50+ subscriptions across the org            | ✅                              | —                   |
-| You need every CAF pillar wired up day one             | ✅                              | —                   |
-| You want **one repo, four cost tiers, one guided lifecycle** | —                          | ✅                  |
-| You want a configuration generator that emits the parameter file | —                       | ✅                  |
-| Your monthly Azure spend is < $5k                      | maybe overkill                  | ✅                  |
-| You want to learn ALZ concepts without 30+ modules     | —                               | ✅                  |
-| You operate from a single hub region                   | both                            | ✅                  |
+| Question                                                         | Use Microsoft's ALZ Accelerator | Use Azure Launchpad |
+| ---------------------------------------------------------------- | ------------------------------- | ------------------- |
+| You have a dedicated platform team of 5+ people                  | ✅                              | also fine           |
+| You'll run 50+ subscriptions across the org                      | ✅                              | —                   |
+| You need every CAF pillar wired up day one                       | ✅                              | —                   |
+| You want **one repo, four cost tiers, one guided lifecycle**     | —                               | ✅                  |
+| You want a configuration generator that emits the parameter file | —                               | ✅                  |
+| Your monthly Azure spend is < $5k                                | maybe overkill                  | ✅                  |
+| You want to learn ALZ concepts without 30+ modules               | —                               | ✅                  |
+| You operate from a single hub region                             | both                            | ✅                  |
 
 If you're an enterprise with a fully-staffed cloud platform team, **use Microsoft's accelerator**. If you're a small or midsized organization that wants ALZ-aligned defaults without weeks of setup, **use this**.
 
 ## Side-by-side
 
-| Aspect                                                  | Microsoft ALZ Accelerator                                              | Azure Launchpad (SMB / SMEC)                                                                                             |
+| Aspect                                                  | Microsoft ALZ Accelerator                                              | Azure Launchpad                                                                                                          |
 | ------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Audience**                                            | Large enterprise / regulated                                           | SMB and SMEC                                                                                                             |
+| **Audience**                                            | Large enterprise / regulated                                           | Small and midsized organizations                                                                                         |
 | **Target spend**                                        | $10k+ / month                                                          | $48 – $616 / month                                                                                                       |
 | **Scenarios**                                           | One full reference, configurable                                       | Four pre-tiered scenarios (baseline, firewall, vpn, full)                                                                |
 | **Module count**                                        | 30+ (Bicep) / 20+ (TF)                                                 | ~10 per stack                                                                                                            |

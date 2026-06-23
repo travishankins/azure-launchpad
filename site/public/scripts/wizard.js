@@ -58,18 +58,18 @@ const QUESTIONS = [
     id: 'deployment_mode',
     label: 'Single subscription or ALZ-aligned multi-subscription split?',
     help: 'Single = everything (hub, spoke, monitoring, KV) lands in one subscription. Multi = ALZ-aligned split across three subscriptions: Connectivity (hub VNet, firewall, VPN), Management (Log Analytics, RSV, automation), Landing-Zone (spoke VNet, KV, workloads). Multi requires Contributor on each sub.',
-    impact: 'Single: simplest, most SMB-friendly, no cross-sub RBAC. Multi: matches Microsoft ALZ, separates platform from workloads, but needs 3 subscriptions and Network Contributor cross-sub for peering and PDZ wiring. Both Terraform and Bicep multi-sub support all four scenarios (baseline / firewall / vpn / full).',
+    impact: 'Single: simplest, no cross-subscription permissions needed. Multi: follows the Microsoft ALZ pattern, separates platform from workloads, but needs 3 subscriptions and cross-sub Network Contributor for VNet peering and private DNS zone linking. Both Terraform and Bicep support all four scenarios in either mode.',
     type: 'radio',
     options: [
-      { value: 'single', label: 'Single subscription — everything in one sub. Default for SMB.' },
+      { value: 'single', label: 'Single subscription — everything in one sub. Simplest starting point.' },
       { value: 'multi', label: 'Multi-subscription (ALZ split) — Connectivity / Management / Landing-Zone subs.' },
     ],
   },
   {
     id: 'egress',
     label: 'How should outbound internet traffic from your workloads be controlled?',
-    help: 'Picks between NAT Gateway (cheap, no inspection) and Azure Firewall Basic (managed inspection + DNS proxy ready). Drives the firewall scenario flag and replaces the NAT path entirely when chosen.',
-    impact: 'NAT: ~$32/mo • Firewall Basic: ~$295/mo (adds AzureFirewallSubnet + AzureFirewallManagementSubnet, forces 0.0.0.0/0 → fw private IP on the spoke route table).',
+    help: 'Choose between NAT Gateway (low-cost, no inspection) and Azure Firewall Basic (managed traffic inspection + DNS proxy). This determines whether the firewall scenario is enabled.',
+    impact: 'NAT Gateway: ~$32/mo • Azure Firewall Basic: ~$295/mo (adds firewall subnets and routes all spoke traffic through the firewall\u2019s private IP).',
     type: 'radio',
     options: [
       { value: 'none', label: 'Standard NAT is fine — no centralized inspection required.' },
@@ -91,7 +91,7 @@ const QUESTIONS = [
     id: 'subscription_id',
     label: 'Target Azure subscription ID (single-sub mode)',
     help: 'Single subscription that hosts everything. The signed-in identity must have Contributor here. Find with: az account show --query id -o tsv',
-    impact: 'Used as the home subscription for the azurerm provider. All 6 resource groups (rg-hub, rg-monitor, rg-backup, rg-spoke-prod, rg-security, rg-migrate) land here.',
+    impact: 'Used as the target subscription for the deployment. All foundation resource groups (hub, monitor, backup, spoke, security, migrate) land here.',
     type: 'text',
     placeholder: '00000000-0000-0000-0000-000000000000',
     pattern: /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
@@ -173,7 +173,7 @@ const QUESTIONS = [
     id: 'tenant_id',
     label: 'Entra tenant ID (required for MG deployment)',
     help: 'The directory (tenant) GUID. Find with: az account show --query tenantId -o tsv',
-    impact: 'Used as the parent of the top-level intermediate MG (the <prefix> root). MGs created: <prefix>, <prefix>-platform, <prefix>-management, <prefix>-connectivity, <prefix>-landingzones, <prefix>-corp, <prefix>-online, plus optionals below.',
+    impact: 'The tenant ID identifies where the management group hierarchy is created. Groups: <prefix>, <prefix>-platform, <prefix>-management, <prefix>-connectivity, <prefix>-landingzones, <prefix>-corp, <prefix>-online, plus any optionals you select below.',
     type: 'text',
     placeholder: '00000000-0000-0000-0000-000000000000',
     optional: true,
@@ -183,14 +183,14 @@ const QUESTIONS = [
   {
     id: 'mg_optional',
     label: 'Optional Management Groups to include',
-    help: 'Pick which optional MGs to create. Identity & Security are recommended once you have dedicated subscriptions for them. Local is the new MG from ALZ 2026.04 for Azure Local & disconnected exit-readiness.',
+    help: 'Pick which optional management groups to create. Identity & Security are recommended once you have dedicated subscriptions for them. Local is for Azure Local and disconnected workloads (ALZ 2026.04 addition).',
     impact: 'Each adds one MG resource at the named parent. No cost. Naming: <prefix>-identity, <prefix>-security, <prefix>-local, <prefix>-decommissioned, <prefix>-sandboxes.',
     type: 'checkbox',
     optional: true,
     options: [
       { value: 'identity', label: 'Identity (platform/identity) — recommended once you have a dedicated identity sub' },
       { value: 'security', label: 'Security (platform/security) — recommended once you have a dedicated security sub' },
-      { value: 'local', label: 'Local (landingzones/local) — Azure Local & disconnected exit-readiness (ALZ 2026.04)', default: true },
+      { value: 'local', label: 'Local (landingzones/local) — Azure Local & disconnected workloads (ALZ 2026.04)', default: true },
       { value: 'decommissioned', label: 'Decommissioned — parking lot for cancelled subs', default: true },
       { value: 'sandboxes', label: 'Sandboxes — developer experimentation', default: true },
     ],
@@ -204,7 +204,7 @@ const QUESTIONS = [
     optional: true,
     options: [
       { value: 'none', label: 'No policies — I\'ll add them later.' },
-      { value: 'starter', label: 'Starter set: Deny public RDP/SSH on Landing Zones + Audit Azure Local exit-readiness.' },
+      { value: 'starter', label: 'Starter set: Deny public RDP/SSH on Landing Zones + Audit Azure Local disconnected workload compliance.' },
     ],
   },
   {
@@ -1349,6 +1349,26 @@ function render(root) {
       'Complete each stage in order. Expand a stage to see the files and commands.',
     ));
 
+    // --- Quick-access download card ---
+    const downloadCard = el('div', { class: 'wizard-download-card' });
+    downloadCard.appendChild(el('strong', {}, 'Download your deployment kit'));
+    const dlList = el('div', { class: 'wizard-download-links' });
+    if (!(isBicep && isMulti)) {
+      dlList.appendChild(el('a', {
+        href: URL.createObjectURL(new Blob([paramFile], { type: 'text/plain' })),
+        download: paramFileName,
+        class: 'wizard-download',
+      }, paramFileName));
+    }
+    const readmeBlob = buildDeploymentReadme(state.answers);
+    dlList.appendChild(el('a', {
+      href: URL.createObjectURL(new Blob([readmeBlob], { type: 'text/markdown' })),
+      download: 'DEPLOY.md',
+      class: 'wizard-download',
+    }, 'DEPLOY.md'));
+    downloadCard.appendChild(dlList);
+    root.appendChild(downloadCard);
+
     // Helper for expandable stages
     function stage(number, title, dangerClass, contentFn) {
       const details = el('details', { class: `wizard-stage ${dangerClass || ''}` });
@@ -1380,6 +1400,29 @@ function render(root) {
         vals.appendChild(el('li', {}, `Management sub: ${state.answers.management_subscription_id}`));
         vals.appendChild(el('li', {}, `Landing zone sub: ${state.answers.landingzone_subscription_id}`));
         body.appendChild(vals);
+        const readme = buildDeploymentReadme(state.answers);
+        body.appendChild(el('a', {
+          href: URL.createObjectURL(new Blob([readme], { type: 'text/markdown' })),
+          download: 'DEPLOY.md',
+          class: 'wizard-download',
+        }, 'Download deployment kit (DEPLOY.md)'));
+      }));
+    } else if (isActions) {
+      root.appendChild(stage(1, 'Your generated configuration', '', (body) => {
+        body.appendChild(el('p', {},
+          'Copy these values into your scenario file in Stage 2. The full file is available as a reference download below.',
+        ));
+        const pre = el('pre', {}, el('code', {}, paramFile));
+        pre.appendChild(copyButton(paramFile));
+        body.appendChild(pre);
+        body.appendChild(el('details', {},
+          el('summary', {}, 'Optional: download as a local reference file'),
+          el('a', {
+            href: URL.createObjectURL(new Blob([paramFile], { type: 'text/plain' })),
+            download: paramFileName,
+            class: 'wizard-download',
+          }, `Download ${paramFileName}`),
+        ));
         const readme = buildDeploymentReadme(state.answers);
         body.appendChild(el('a', {
           href: URL.createObjectURL(new Blob([readme], { type: 'text/markdown' })),
@@ -1601,7 +1644,7 @@ function render(root) {
           checklist.appendChild(el('li', {},
             'Create a second Entra app registration. Grant: ',
             el('code', {}, 'Management Group Contributor'), ' at Tenant Root',
-            state.answers.mg_policies === 'starter' ? ', ' : '.', 
+            state.answers.mg_policies === 'starter' ? ', ' : '.',
             state.answers.mg_policies === 'starter' ? el('code', {}, 'Resource Policy Contributor') : '',
             state.answers.mg_policies === 'starter' ? ' at Tenant Root.' : '',
           ));
@@ -1647,7 +1690,13 @@ function render(root) {
         const mgPreviewCmds = buildMgPreviewCommands(state.answers);
         const mgApplyCmds = buildMgApplyCommands(state.answers);
 
+        const mgSavePath = isBicep
+          ? 'infra/bicep/management-groups/scenarios/wizard.bicepparam'
+          : 'infra/terraform/management-groups/mg.auto.tfvars';
         root.appendChild(stage('A', `Save MG ${platformLabel} parameter file`, '', (body) => {
+          body.appendChild(el('p', {},
+            'Save as ', el('code', {}, mgSavePath), ' in the repo root.',
+          ));
           const pre = el('pre', {}, el('code', {}, mgFile));
           pre.appendChild(copyButton(mgFile));
           body.appendChild(pre);

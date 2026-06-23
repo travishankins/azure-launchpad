@@ -1,6 +1,6 @@
 ---
 title: Compare scenarios
-description: Pick the right Azure Launchpad (SMB / SMEC Edition) landing zone scenario for your customer.
+description: Pick the right Azure Launchpad landing zone scenario for your organization.
 ---
 
 :::tip[Not sure where to start?]

@@ -7,7 +7,7 @@ A short, opinionated glossary of every term you'll see in this repo. Linked from
 
 ## Azure landing zone (ALZ)
 
-A pre-built, opinionated environment in Azure that's secure, governed, scalable, and ready to host workloads on day one. Azure Launchpad is an SMB/SMEC-sized ALZ implementation aligned to the [Microsoft Cloud Adoption Framework (CAF)](https://learn.microsoft.com/azure/cloud-adoption-framework/).
+A pre-built, opinionated environment in Azure that's secure, governed, scalable, and ready to host workloads on day one. Azure Launchpad is a right-sized ALZ implementation for small and midsized organizations, aligned to the [Microsoft Cloud Adoption Framework (CAF)](https://learn.microsoft.com/azure/cloud-adoption-framework/).
 
 ## Cloud Adoption Framework (CAF)
 
@@ -118,7 +118,9 @@ One of `baseline`, `firewall`, `vpn`, `full`. Each is a tfvars / bicepparam file
 
 ## SMB / SMEC
 
-The audience for this project.
+The target audience for this project.
 
 - **SMB** — small and midsized business; loosely, < 1 000 employees, single-region, lean platform team.
-- **SMEC** — small and midsized enterprises and corps; loosely, 1 000-10 000 employees, multi-region appetite, dedicated platform team. Both can run this foundation; the **full** scenario plus the optional MG module is the natural shape for SMEC.
+- **SMEC** — small and midsized enterprises and corps; loosely, 1 000–10 000 employees, multi-region appetite, dedicated platform team.
+
+Both can run this foundation; the **full** scenario plus the optional MG module is the natural shape for larger organizations.

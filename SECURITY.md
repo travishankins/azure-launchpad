@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in **Azure Launchpad (SMB / SMEC Edition)**, please report it privately so we can fix it before public disclosure.
+If you discover a security vulnerability in **Azure Launchpad**, please report it privately so we can fix it before public disclosure.
 
 **Do not** open a public GitHub issue.
 
