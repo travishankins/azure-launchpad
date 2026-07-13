@@ -43,7 +43,7 @@ module "automation_account" {
 ###############################################################################
 module "recovery_vault" {
   source  = "Azure/avm-res-recoveryservices-vault/azurerm"
-  version = "1.1.9"
+  version = "1.2.0"
 
   providers = {
     azurerm = azurerm.management
