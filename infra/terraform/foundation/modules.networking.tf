@@ -8,7 +8,7 @@
 #   the modules are bumped to versions that drop the attribute.
 module "vnet_hub" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "0.19.0"
+  version = "0.22.1"
 
   providers = {
     azurerm = azurerm.connectivity
@@ -41,7 +41,7 @@ module "vnet_hub" {
 ###############################################################################
 module "vnet_spoke" {
   source  = "Azure/avm-res-network-virtualnetwork/azurerm"
-  version = "0.19.0"
+  version = "0.22.1"
 
   providers = {
     azurerm = azurerm.landingzone
